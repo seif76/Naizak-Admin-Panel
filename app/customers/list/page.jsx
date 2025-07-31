@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { FaUserTie, FaSpinner, FaUserSlash , FaEye, FaTrash } from 'react-icons/fa';
+import { useRouter } from 'next/navigation';
 
 export default function CustomerListPage() {
   const [customers, setCustomers] = useState([]);
@@ -11,16 +12,17 @@ export default function CustomerListPage() {
   const [loading, setLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState('');
   const BACKEND_URL=  process.env.NEXT_PUBLIC_BACKEND_URL;
+  const router = useRouter();
   
 
   const fetchStats = async () => {
-    const res = await axios.get(`${BACKEND_URL}/api/customers/get-all-customers-status`);
+    const res = await axios.get(`${BACKEND_URL}/api/admin/customers/stats`);
     setStats(res.data);
   };
 
   const fetchCustomers = async () => {
     setLoading(true);
-    const res = await axios.get(`${BACKEND_URL}/api/customers/all`, {
+    const res = await axios.get(`${BACKEND_URL}/api/admin/customers`, {
       params: { page, limit: 10, status: statusFilter || undefined },
     });
     //alert(JSON.stringify(res.data.Customers));
@@ -29,10 +31,30 @@ export default function CustomerListPage() {
     setLoading(false);
   };
 
-  const deletecustomer = async (phone_number) => {
-    const res = await axios.delete(`${BACKEND_URL}/api/customers/delete?phone_number=${phone_number}`);
-    fetchCustomers()
+  const deleteCustomer = async (customerId) => {
+    if (window.confirm('Are you sure you want to delete this customer?')) {
+      try {
+        await axios.delete(`${BACKEND_URL}/api/admin/customers/${customerId}`);
+        fetchCustomers();
+      } catch (error) {
+        console.error('Error deleting customer:', error);
+      }
+    }
+  };
+  const searchwithphoneorname = async (searchTerm) => {
+    if(searchTerm.length > 0){
+    const filteredCustomers = customers.filter(customer => 
+      customer.phone_number.includes(searchTerm) || customer.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setCustomers(filteredCustomers);
+  }else{
+    fetchCustomers();
   }
+  };
+
+  const navigateToCustomerDetails = (customerId) => {
+    router.push(`/customers/details?id=${customerId}`);
+  };
 
   useEffect(() => {
     fetchStats();
@@ -72,6 +94,12 @@ export default function CustomerListPage() {
           <option value="Active">Active</option>
           <option value="Deactivated">Deactivated</option>
         </select>
+        <input
+          type="text"
+          placeholder="Search by phone or name"
+          onChange={(e) => searchwithphoneorname(e.target.value)}
+          className="border border-gray-300 ml-2 rounded px-3 py-2"
+        />
       </div>
 
       {/* Table */}
@@ -105,10 +133,13 @@ export default function CustomerListPage() {
                   <td className="p-3">{customer.customer_status}</td>
                   <td className="p-3">{customer.rating}</td>
                   <td className="px-4 py-2 space-x-2">
-                   <button className="text-primary hover:text-blue-700">
+                   <button 
+                     onClick={() => navigateToCustomerDetails(customer.id)}
+                     className="text-primary hover:text-blue-700"
+                   >
                      <FaEye />
                    </button>
-                   <button onClick={() => deletecustomer(customer.phone_number)} className="text-red-500 hover:text-red-700">
+                   <button onClick={() => deleteCustomer(customer.id)} className="text-red-500 hover:text-red-700">
                      <FaTrash />
                  </button>
                  </td>

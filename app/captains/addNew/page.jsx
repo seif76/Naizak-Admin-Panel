@@ -127,7 +127,7 @@ export default function CaptainRegisterPage() {
 
   const handleSubmit = async () => {
     try {
-      const res = await axios.post('http://localhost:5000/api/captain/auth/register', {
+      const res = await axios.post(`${BACKEND_URL}/api/admin/captains/register`, {
         user: userData,
         vehicle: vehicleData,
       });

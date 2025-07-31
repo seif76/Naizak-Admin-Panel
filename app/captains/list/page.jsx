@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { FaUserTie, FaSpinner, FaUserSlash , FaEye, FaTrash } from 'react-icons/fa';
+import { useRouter } from 'next/navigation';
 
 export default function CaptainsListPage() {
   const [captains, setCaptains] = useState([]);
@@ -12,16 +13,17 @@ export default function CaptainsListPage() {
   const [loading, setLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState('');
   const BACKEND_URL=  process.env.NEXT_PUBLIC_BACKEND_URL;
+  const router = useRouter();
   //alert(BACKEND_URL);
 
   const fetchStats = async () => {
-    const res = await axios.get(`${BACKEND_URL}/api/captain/get-all-captains-status`);
+    const res = await axios.get(`${BACKEND_URL}/api/admin/captains/stats`);
     setStats(res.data);
   };
 
   const fetchCaptains = async () => {
     setLoading(true);
-    const res = await axios.get(`${BACKEND_URL}/api/captain/all`, {
+    const res = await axios.get(`${BACKEND_URL}/api/admin/captains`, {
       params: { page, limit: 10, status: statusFilter || undefined },
     });
     //alert(JSON.stringify(res.data.captains));
@@ -30,10 +32,20 @@ export default function CaptainsListPage() {
     setLoading(false);
   };
 
-  const deleteCaptain = async (phone_number) => {
-    const res = await axios.delete(`${BACKEND_URL}/api/captain/delete?phone_number=${phone_number}`);
-    fetchCaptains()
-  }
+  const deleteCaptain = async (captainId) => {
+    if (window.confirm('Are you sure you want to delete this captain?')) {
+      try {
+        await axios.delete(`${BACKEND_URL}/api/admin/captains/${captainId}`);
+        fetchCaptains();
+      } catch (error) {
+        console.error('Error deleting captain:', error);
+      }
+    }
+  };
+  const navigateToCaptainDetails = (captainId) => {
+    router.push(`/captains/details?id=${captainId}`);
+  };
+
 
   useEffect(() => {
     fetchStats();
@@ -111,10 +123,13 @@ export default function CaptainsListPage() {
                   <td className="p-3">{captain.captain_status}</td>
                   <td className="p-3">{captain.rating}</td>
                   <td className="px-4 py-2 space-x-2">
-                   <button className="text-primary hover:text-blue-700">
+                   <button 
+                     onClick={() => navigateToCaptainDetails(captain.id)}
+                     className="text-primary hover:text-blue-700"
+                   >
                      <FaEye />
                    </button>
-                   <button onClick={() => deleteCaptain(captain.phone_number)} className="text-red-500 hover:text-red-700">
+                   <button onClick={() => deleteCaptain(captain.id)} className="text-red-500 hover:text-red-700">
                      <FaTrash />
                  </button>
                  </td>

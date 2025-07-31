@@ -110,11 +110,12 @@ export default function PendingCaptainsPage() {
   const [captains, setCaptains] = useState([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
   const fetchPendingCaptains = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/captain/pending');
-      setCaptains(res.data);
+      const res = await axios.get(`${BACKEND_URL}/api/admin/captains/pending`);
+      setCaptains(res.data.captains || []);
       setLoading(false);
     } catch (error) {
       console.error('Failed to fetch captains', error);
@@ -123,9 +124,9 @@ export default function PendingCaptainsPage() {
 
   const approveCaptain = async (phone_number) => {
     try {
-      await axios.put('http://localhost:5000/api/captain/status', {
+      await axios.put(`${BACKEND_URL}/api/admin/captains/status`, {
         phone_number,
-        status: 'Active',
+        captain_status: 'Active',
       });
       fetchPendingCaptains();
     } catch (error) {
@@ -135,9 +136,9 @@ export default function PendingCaptainsPage() {
 
   const rejectCaptain = async (phone_number) => {
     try {
-      await axios.put('http://localhost:5000/api/captain/status', {
+      await axios.put(`${BACKEND_URL}/api/admin/captains/status`, {
         phone_number,
-        status: 'Deactivated',
+        captain_status: 'Deactivated',
       });
       fetchPendingCaptains();
     } catch (error) {

@@ -1,36 +1,163 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# ElNaizak Admin Panel
+
+A comprehensive admin dashboard for managing the ElNaizak multi-service platform.
+
+## Features
+
+### 🏠 Dashboard
+- **Overview Statistics**: Real-time stats for customers, captains, vendors, and orders
+- **Quick Actions**: Direct access to key management functions
+- **Recent Activity**: Latest platform activities and updates
+- **Revenue Tracking**: Visual charts and growth metrics
+
+### 👥 User Management
+
+#### Customers
+- **List View**: View all customers with filtering and pagination
+- **Add New**: Register new customers
+- **Status Management**: Activate/deactivate customer accounts
+- **Statistics**: Active vs deactivated customer counts
+
+#### Captains (Drivers)
+- **List View**: Manage all captains with detailed information
+- **Add New**: Register new captains with vehicle information
+- **Pending Captains**: Review and approve captain applications
+- **Status Management**: Approve, reject, or deactivate captains
+- **Vehicle Information**: Track captain vehicle details
+
+#### Vendors
+- **List View**: Manage all vendors and their shops
+- **Add New**: Register new vendors
+- **Pending Vendors**: Review and approve vendor applications
+- **Shop Management**: Track shop information and products
+- **Status Management**: Approve, reject, or deactivate vendors
+
+### 📦 Order Management
+- **Order List**: View all orders with filtering by status
+- **Order Details**: Track order progress and items
+- **Status Updates**: Update order status (pending, confirmed, completed, cancelled)
+- **Statistics**: Order counts by status
+- **Customer & Vendor Info**: Link orders to customers and vendors
+
+### 💬 Support System
+- **Chat Support**: Real-time messaging with customers, vendors, and captains
+- **Chat Management**: View and respond to support requests
+- **Status Tracking**: Track chat status (open, pending, closed)
+- **Search & Filter**: Find specific conversations quickly
+
+### ⚙️ Settings
+- **General Settings**: Site configuration, contact information, timezone
+- **Notification Settings**: Email, SMS, and push notification preferences
+- **Security Settings**: Session timeout, 2FA, password policies
+- **Appearance Settings**: Theme, colors, sidebar preferences
+- **System Information**: Backend status and quick actions
+
+### 📊 Analytics
+- **Revenue Analytics**: Track revenue growth and trends
+- **Top Performers**: Best vendors and products
+- **Platform Metrics**: Customer retention, satisfaction scores
+- **Service Distribution**: Breakdown by service type
+- **Export & Reports**: Generate detailed reports
+
+## Technology Stack
+
+- **Frontend**: Next.js 15, React 19, Tailwind CSS
+- **Icons**: React Icons
+- **HTTP Client**: Axios
+- **Styling**: Custom CSS with Tailwind utilities
 
 ## Getting Started
 
-First, run the development server:
+1. **Install Dependencies**:
+   ```bash
+   npm install
+   ```
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+2. **Environment Variables**:
+   Create a `.env.local` file:
+   ```
+   NEXT_PUBLIC_BACKEND_URL=http://localhost:5000
+   ```
+
+3. **Run Development Server**:
+   ```bash
+   npm run dev
+   ```
+
+4. **Build for Production**:
+   ```bash
+   npm run build
+   npm start
+   ```
+
+## API Integration
+
+The admin panel integrates with the ElNaizak backend API:
+
+### Endpoints Used
+- `/api/customers/*` - Customer management
+- `/api/captain/*` - Captain management  
+- `/api/vendor/*` - Vendor management
+- `/api/orders/*` - Order management
+- `/api/chat/*` - Support chat system
+- `/api/analytics/*` - Analytics data
+
+### Authentication
+- JWT token-based authentication
+- Role-based access control
+- Session management
+
+## File Structure
+
+```
+admin-panel/
+├── app/
+│   ├── page.js                 # Dashboard
+│   ├── customers/              # Customer management
+│   ├── captains/               # Captain management
+│   ├── vendors/                # Vendor management
+│   ├── orders/                 # Order management
+│   ├── support/                # Support system
+│   ├── analytics/              # Analytics dashboard
+│   └── settings/               # System settings
+├── components/
+│   └── navigation/             # Navigation components
+├── public/                     # Static assets
+└── styles/                     # Global styles
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Key Features
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+### Responsive Design
+- Mobile-friendly interface
+- Responsive tables and charts
+- Adaptive navigation
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Real-time Updates
+- Live chat functionality
+- Real-time statistics
+- Instant status updates
 
-## Learn More
+### Data Management
+- Pagination for large datasets
+- Search and filtering
+- Export capabilities
+- Bulk operations
 
-To learn more about Next.js, take a look at the following resources:
+### Security
+- Input validation
+- XSS protection
+- CSRF protection
+- Secure API communication
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Contributing
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
 
-## Deploy on Vercel
+## License
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+This project is part of the ElNaizak platform.
