@@ -20,7 +20,7 @@ import {
   FaEye,
   FaDownload
 } from 'react-icons/fa';
-
+import api from '../../../lib/axios';
 export default function OrderDetailsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -35,7 +35,7 @@ export default function OrderDetailsPage() {
   const fetchOrderDetails = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`${BACKEND_URL}/api/admin/orders/${orderId}`);
+      const res = await api.get(`/api/admin/orders/${orderId}`);
       setOrder(res.data);
     } catch (error) {
       console.error('Error fetching order details:', error);
@@ -47,7 +47,7 @@ export default function OrderDetailsPage() {
   const updateOrderStatus = async (status) => {
     try {
       setUpdating(true);
-      await axios.put(`${BACKEND_URL}/api/admin/orders/${orderId}/status`, { status });
+      await api.put(`/api/admin/orders/${orderId}/status`, { status });
       await fetchOrderDetails(); // Refresh data
     } catch (error) {
       console.error('Error updating order status:', error);

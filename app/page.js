@@ -1,30 +1,28 @@
 'use client';
 import { useState, useEffect } from 'react';
-import axios from 'axios';
-import { 
-  FaUsers, 
-  FaUserTie, 
-  FaStore, 
-  FaCar, 
-  FaShoppingCart, 
+import {
+  FaUsers,
+  FaUserTie,
+  FaStore,
+  FaCar,
+  FaShoppingCart,
   FaComments,
   FaChartLine,
-  FaExclamationTriangle,
+  FaCog,
   FaCheckCircle
 } from 'react-icons/fa';
 import Link from 'next/link';
+import api from '../lib/axios';
 
 export default function Dashboard() {
   const [stats, setStats] = useState({
-    customers: { total: 0, active: 0, deactivated: 0 },
-    captains: { total: 0, active: 0, pending: 0, deactivated: 0 },
-    vendors: { total: 0, active: 0, pending: 0, deactivated: 0 },
+    customers: { active: 0, deactivated: 0 },
+    captains: { active: 0, pending: 0, deactivated: 0 },
+    vendors: { active: 0, pending: 0, deactivated: 0 },
     orders: { total: 0, pending: 0, completed: 0 },
     rides: { total: 0, active: 0, completed: 0 }
   });
-  const [recentActivity, setRecentActivity] = useState([]);
   const [loading, setLoading] = useState(true);
-  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
   useEffect(() => {
     fetchDashboardData();
@@ -36,9 +34,9 @@ export default function Dashboard() {
       
       // Fetch all stats in parallel
       const [customersRes, captainsRes, vendorsRes] = await Promise.all([
-        axios.get(`${BACKEND_URL}/api/admin/customers/stats`),
-        axios.get(`${BACKEND_URL}/api/admin/captains/stats`),
-        axios.get(`${BACKEND_URL}/api/admin/vendors/stats`)
+        api.get('/api/admin/customers/stats'),
+        api.get('/api/admin/captains/stats'),
+        api.get('/api/admin/vendors/stats')
       ]);
 
       setStats({
@@ -138,43 +136,43 @@ export default function Dashboard() {
         <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <QuickActionCard
-            title="Manage Captains"
-            description="View and manage all captains"
-            icon={<FaUserTie />}
-            color="border-l-green-500"
-            href="/captains/list"
-          />
-          <QuickActionCard
             title="Manage Customers"
-            description="View and manage all customers"
+            description="View and manage customer accounts"
             icon={<FaUsers />}
             color="border-l-blue-500"
             href="/customers/list"
           />
           <QuickActionCard
+            title="Manage Captains"
+            description="View and manage captain accounts"
+            icon={<FaUserTie />}
+            color="border-l-green-500"
+            href="/captains/list"
+          />
+          <QuickActionCard
             title="Manage Vendors"
-            description="View and manage all vendors"
+            description="View and manage vendor accounts"
             icon={<FaStore />}
             color="border-l-purple-500"
             href="/vendors/list"
           />
           <QuickActionCard
             title="View Orders"
-            description="Monitor all orders"
+            description="Monitor and manage orders"
             icon={<FaShoppingCart />}
             color="border-l-orange-500"
             href="/orders/list"
           />
           <QuickActionCard
-            title="Chat Support"
-            description="Manage customer support"
+            title="Support Chat"
+            description="Handle customer support requests"
             icon={<FaComments />}
-            color="border-l-pink-500"
-            href="/chat/support"
+            color="border-l-red-500"
+            href="/support/chat"
           />
           <QuickActionCard
             title="Analytics"
-            description="View detailed reports"
+            description="View platform analytics and reports"
             icon={<FaChartLine />}
             color="border-l-indigo-500"
             href="/analytics"
@@ -186,24 +184,27 @@ export default function Dashboard() {
       <div className="bg-white rounded-lg shadow-md p-6">
         <h2 className="text-xl font-semibold text-gray-900 mb-4">Recent Activity</h2>
         <div className="space-y-4">
-          {recentActivity.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <FaChartLine className="text-4xl mx-auto mb-4 text-gray-300" />
-              <p>No recent activity to display</p>
+          <div className="flex items-center gap-3 p-3 bg-gray-50 rounded">
+            <FaCheckCircle className="text-green-500" />
+            <div>
+              <p className="text-sm font-medium text-gray-900">New customer registered</p>
+              <p className="text-xs text-gray-500">2 minutes ago</p>
             </div>
-          ) : (
-            recentActivity.map((activity, index) => (
-              <div key={index} className="flex items-center gap-4 p-3 bg-gray-50 rounded">
-                <div className="text-green-500">
-                  <FaCheckCircle />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">{activity.message}</p>
-                  <p className="text-xs text-gray-500">{activity.time}</p>
-                </div>
-              </div>
-            ))
-          )}
+          </div>
+          <div className="flex items-center gap-3 p-3 bg-gray-50 rounded">
+            <FaCheckCircle className="text-green-500" />
+            <div>
+              <p className="text-sm font-medium text-gray-900">Captain approved</p>
+              <p className="text-xs text-gray-500">5 minutes ago</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 p-3 bg-gray-50 rounded">
+            <FaCheckCircle className="text-green-500" />
+            <div>
+              <p className="text-sm font-medium text-gray-900">New order received</p>
+              <p className="text-xs text-gray-500">10 minutes ago</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>

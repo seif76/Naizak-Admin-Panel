@@ -17,7 +17,7 @@ import {
   Send,
   MoreVertical
 } from 'lucide-react';
-
+import Cookies from 'js-cookie';
 export default function SupportChat() {
   const [chats, setChats] = useState([]);
   const [selectedChat, setSelectedChat] = useState(null);
@@ -28,7 +28,7 @@ export default function SupportChat() {
   const [statusFilter, setStatusFilter] = useState('');
   const [chatTypeFilter, setChatTypeFilter] = useState('');
   const [newMessage, setNewMessage] = useState('');
-
+  const token = Cookies.get('admin_token');
   const fetchChats = async () => {
     try {
       setLoading(true);
@@ -36,7 +36,13 @@ export default function SupportChat() {
       if (statusFilter) params.append('status', statusFilter);
       if (chatTypeFilter) params.append('chat_type', chatTypeFilter);
       
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/support/chats?${params}`);
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/support/chats?${params}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
       setChats(response.data.chats || []);
     } catch (error) {
       console.error('Error fetching chats:', error);
@@ -48,7 +54,14 @@ export default function SupportChat() {
 
   const fetchMessages = async (chatId) => {
     try {
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/support/chats/${chatId}/messages`);
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/support/chats/${chatId}/messages`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+      
       setMessages(response.data.messages || []);
     } catch (error) {
       console.error('Error fetching messages:', error);

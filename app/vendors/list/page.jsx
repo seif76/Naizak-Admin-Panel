@@ -1,10 +1,11 @@
 'use client';
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import { FaStore, FaSpinner, FaUserSlash, FaEye, FaTrash, FaCheck, FaTimes } from 'react-icons/fa';
+import { useEffect, useState } from 'react';
+import { FaStore, FaEye, FaEdit, FaTrash, FaCheck, FaTimes, FaSpinner } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
+import api from '../../../lib/axios';
+import { VendorsRoute } from '../../../components/auth/ProtectedRoute';
 
-export default function VendorsListPage() {
+function VendorsListPage() {
   const [vendors, setVendors] = useState([]);
   const [stats, setStats] = useState({});
   const [page, setPage] = useState(1);
@@ -12,11 +13,10 @@ export default function VendorsListPage() {
   const [loading, setLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState('');
   const router = useRouter();
-  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
   const fetchStats = async () => {
     try {
-      const res = await axios.get(`${BACKEND_URL}/api/admin/vendors/stats`);
+      const res = await api.get('/api/admin/vendors/stats');
       setStats(res.data);
     } catch (error) {
       console.error('Error fetching vendor stats:', error);
@@ -26,10 +26,9 @@ export default function VendorsListPage() {
   const fetchVendors = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${BACKEND_URL}/api/admin/vendors`, {
+      const res = await api.get('/api/admin/vendors', {
         params: { page, limit: 10, status: statusFilter || undefined },
       });
-      
       setVendors(res.data.vendors || []);
       setTotalPages(res.data.totalPages || 1);
     } catch (error) {
@@ -38,24 +37,26 @@ export default function VendorsListPage() {
     setLoading(false);
   };
 
-  const deleteVendor = async (phone_number) => {
-    try {
-      await axios.delete(`${BACKEND_URL}/api/admin/vendors/delete?phone_number=${phone_number}`);
-      fetchVendors();
-    } catch (error) {
-      console.error('Error deleting vendor:', error);
-    }
-  };
-
   const updateVendorStatus = async (phone_number, status) => {
     try {
-      await axios.put(`${BACKEND_URL}/api/admin/vendors/status`, {
+      await api.put('/api/admin/vendors/status', {
         phone_number,
-        vendor_status: status
+        vendor_status: status,
       });
       fetchVendors();
     } catch (error) {
       console.error('Error updating vendor status:', error);
+    }
+  };
+
+  const deleteVendor = async (phone_number) => {
+    if (window.confirm('Are you sure you want to delete this vendor?')) {
+      try {
+        await api.delete(`/api/admin/vendors/delete?phone_number=${phone_number}`);
+        fetchVendors();
+      } catch (error) {
+        console.error('Error deleting vendor:', error);
+      }
     }
   };
 
@@ -76,131 +77,208 @@ export default function VendorsListPage() {
       <h1 className="text-2xl font-bold mb-4">Vendor Management</h1>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
-        <div className="bg-blue-100 p-4 rounded shadow">
-          <div className="flex items-center gap-2 text-blue-600">
-            <FaStore /> <span className="text-lg">Active: {stats.active || 0}</span>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="bg-white p-4 rounded-lg shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Total Vendors</p>
+              <p className="text-2xl font-bold">{stats.total || 0}</p>
+            </div>
+            <FaStore className="text-2xl text-blue-500" />
           </div>
         </div>
-        <div className="bg-yellow-100 p-4 rounded shadow">
-          <div className="flex items-center gap-2 text-yellow-600">
-            <FaSpinner /> <span className="text-lg">Pending: {stats.pending || 0}</span>
+        <div className="bg-white p-4 rounded-lg shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Active Vendors</p>
+              <p className="text-2xl font-bold text-green-600">{stats.active || 0}</p>
+            </div>
+            <FaCheck className="text-2xl text-green-500" />
           </div>
         </div>
-        <div className="bg-red-100 p-4 rounded shadow">
-          <div className="flex items-center gap-2 text-red-600">
-            <FaUserSlash /> <span className="text-lg">Deactivated: {stats.deactivated || 0}</span>
+        <div className="bg-white p-4 rounded-lg shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Pending</p>
+              <p className="text-2xl font-bold text-yellow-600">{stats.pending || 0}</p>
+            </div>
+            <FaSpinner className="text-2xl text-yellow-500" />
           </div>
         </div>
-        <div className="bg-green-100 p-4 rounded shadow">
-          <div className="flex items-center gap-2 text-green-600">
-            <FaStore /> <span className="text-lg">Total: {(stats.active || 0) + (stats.pending || 0) + (stats.deactivated || 0)}</span>
+        <div className="bg-white p-4 rounded-lg shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Deactivated</p>
+              <p className="text-2xl font-bold text-red-600">{stats.deactivated || 0}</p>
+            </div>
+            <FaTimes className="text-2xl text-red-500" />
           </div>
         </div>
       </div>
 
-      {/* Filter */}
-      <div className="mb-4">
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="border rounded px-3 py-2"
-        >
-          <option value="">All Status</option>
-          <option value="Active">Active</option>
-          <option value="pending">Pending</option>
-          <option value="Deactivated">Deactivated</option>
-        </select>
+      {/* Filters */}
+      <div className="bg-white p-4 rounded-lg shadow mb-6">
+        <div className="flex items-center gap-4">
+          <span className="text-sm font-medium">Filter by Status:</span>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="border rounded px-3 py-1 text-sm"
+          >
+            <option value="">All Vendors</option>
+            <option value="Active">Active</option>
+            <option value="pending">Pending</option>
+            <option value="Deactivated">Deactivated</option>
+          </select>
+        </div>
       </div>
 
-      {/* Table */}
-      <div className="overflow-auto bg-white shadow rounded">
-        <table className="w-full text-left min-w-[800px]">
-          <thead>
-            <tr className="bg-gray-100 text-sm">
-              <th className="p-3">#</th>
-              <th className="p-3">Shop Name</th>
-              <th className="p-3">Owner</th>
-              <th className="p-3">Phone</th>
-              <th className="p-3">Location</th>
-              <th className="p-3">Status</th>
-              <th className="p-3">Products</th>
-              <th className="px-3 p-3">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr><td colSpan={8} className="text-center p-5">Loading...</td></tr>
-            ) : vendors?.length === 0 ? (
-              <tr><td colSpan={8} className="text-center p-5">No data</td></tr>
-            ) : (
-              vendors?.map((vendor, idx) => (
-                <tr key={vendor.id} className="border-b">
-                  <td className="p-3">{(page - 1) * 10 + idx + 1}</td>
-                  <td className="p-3">{vendor.vendor_info.shop_name}</td>
-                  <td className="p-3">{vendor.vendor_info.owner_name}</td>
-                  <td className="p-3">{vendor.vendor_info.phone_number}</td>
-                  <td className="p-3">{vendor.vendor_info.shop_location}</td>
-                  <td className="p-3">
-                    <span className={`px-2 py-1 rounded text-xs ${
-                      vendor.vendor_status === 'Active' ? 'bg-green-100 text-green-800' :
-                      vendor.vendor_status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-red-100 text-red-800'
-                    }`}>
-                      {vendor.vendor_status}
-                    </span>
-                  </td>
-                  <td className="p-3">{vendor.products_count || 0}</td>
-                  <td className="px-4 py-2 space-x-2">
-                    <button 
-                    onClick={() => navigateToDetails(vendor.phone_number)}
-                    className="text-primary hover:text-blue-700">
-                      <FaEye />
-                    </button>
-                    {vendor.vendor_status === 'pending' && (
-                      <>
-                        <button 
-                          onClick={() => updateVendorStatus(vendor.phone_number, 'Active')}
-                          className="text-green-500 hover:text-green-700"
-                          title="Approve"
-                        >
-                          <FaCheck />
-                        </button>
-                        <button 
-                          onClick={() => updateVendorStatus(vendor.phone_number, 'Deactivated')}
-                          className="text-red-500 hover:text-red-700"
-                          title="Reject"
-                        >
-                          <FaTimes />
-                        </button>
-                      </>
-                    )}
-                    <button 
-                      onClick={() => deleteVendor(vendor.phone_number)} 
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      <FaTrash />
-                    </button>
+      {/* Vendors Table */}
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left min-w-[900px]">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Vendor</th>
+                <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
+                <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Shop Name</th>
+                <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Joined</th>
+                <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {loading ? (
+                <tr>
+                  <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
+                    Loading vendors...
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : vendors.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
+                    No vendors found
+                  </td>
+                </tr>
+              ) : (
+                vendors.map((vendor) => (
+                  <tr key={vendor.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <FaStore className="text-gray-400 mr-2" />
+                        <div className="text-sm font-medium text-gray-900">{vendor.name}</div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {vendor.email}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {vendor.phone_number}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {vendor.shop_name || 'N/A'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        vendor.vendor_status === 'Active' 
+                          ? 'bg-green-100 text-green-800'
+                          : vendor.vendor_status === 'pending'
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {vendor.vendor_status === 'Active' ? (
+                          <FaCheck className="mr-1" />
+                        ) : vendor.vendor_status === 'pending' ? (
+                          <FaSpinner className="mr-1 animate-spin" />
+                        ) : (
+                          <FaTimes className="mr-1" />
+                        )}
+                        {vendor.vendor_status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {new Date(vendor.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => navigateToDetails(vendor.phone_number)}
+                          className="text-indigo-600 hover:text-indigo-900"
+                        >
+                          <FaEye className="inline mr-1" />
+                          View
+                        </button>
+                        <button
+                          onClick={() => updateVendorStatus(
+                            vendor.phone_number, 
+                            vendor.vendor_status === 'Active' ? 'Deactivated' : 'Active'
+                          )}
+                          className={`${
+                            vendor.vendor_status === 'Active'
+                              ? 'text-red-600 hover:text-red-900'
+                              : 'text-green-600 hover:text-green-900'
+                          }`}
+                        >
+                          {vendor.vendor_status === 'Active' ? (
+                            <>
+                              <FaTimes className="inline mr-1" />
+                              Deactivate
+                            </>
+                          ) : (
+                            <>
+                              <FaCheck className="inline mr-1" />
+                              Activate
+                            </>
+                          )}
+                        </button>
+                        <button
+                          onClick={() => deleteVendor(vendor.phone_number)}
+                          className="text-red-600 hover:text-red-900"
+                        >
+                          <FaTrash className="inline mr-1" />
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Pagination */}
-      <div className="mt-4 flex justify-center gap-2">
-        {[...Array(totalPages).keys()].map((num) => (
-          <button
-            key={num + 1}
-            className={`px-3 py-1 rounded border ${page === num + 1 ? 'bg-green-500 text-white' : 'bg-white text-gray-800'}`}
-            onClick={() => setPage(num + 1)}
-          >
-            {num + 1}
-          </button>
-        ))}
-      </div>
+      {totalPages > 1 && (
+        <div className="flex justify-center mt-6">
+          <div className="flex gap-2">
+            <button
+              onClick={() => setPage(Math.max(1, page - 1))}
+              disabled={page === 1}
+              className="px-3 py-2 border rounded disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <span className="px-3 py-2">Page {page} of {totalPages}</span>
+            <button
+              onClick={() => setPage(Math.min(totalPages, page + 1))}
+              disabled={page === totalPages}
+              className="px-3 py-2 border rounded disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
     </div>
+  );
+}
+
+export default function ProtectedVendorsListPage() {
+  return (
+    <VendorsRoute>
+      <VendorsListPage />
+    </VendorsRoute>
   );
 } 

@@ -1,43 +1,63 @@
-
+'use client';
 import Sidenav from "@/components/navigation/sideNav";
 import "./globals.css";
 import TopNavbar from "@/components/navigation/Navbar";
+import { AdminAuthProvider } from "../context/AdminAuthContext";
+import { useAdminAuth } from "../context/AdminAuthContext";
+import { usePathname } from 'next/navigation';
 
+function LayoutContent({ children }) {
+  const { isAuthenticated, loading } = useAdminAuth();
+  const pathname = usePathname();
 
+  // Show loading while checking auth
+  if (loading) {
+    return (
+      <html lang="en">
+        <body className="bg-gray-100">
+          <div className="flex items-center justify-center min-h-screen">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          </div>
+        </body>
+      </html>
+    );
+  }
 
-export const metadata = {
-  title: 'Admin Panel',
-  description: 'Admin panel dashboard',
-};
+  // If not authenticated, show only the login page without navigation
+  if (!isAuthenticated) {
+    return (
+      <html lang="en">
+        <body className="bg-gray-100">
+          {children}
+        </body>
+      </html>
+    );
+  }
+
+  // Show main layout for authenticated users
+  return (
+    <html lang="en">
+      <body className="bg-gray-100">
+        {/* Fixed Sidebar */}
+        <Sidenav />
+
+        {/* Main Layout */}
+        <div className="ml-64"> {/* Shift content to the right of the fixed sidebar */}
+          <TopNavbar /> {/* Optional: Add fixed class and height if needed */}
+
+          <main className="p-6 pt-20 min-h-screen">
+            {children}
+          </main>
+        </div>
+      </body>
+    </html>
+  );
+}
+
 export default function RootLayout({ children }) {
   return (
-
-  //   <html lang="en">
-  //   <body className="flex flex-col min-h-screen">
-  //     {/* Top Navbar */}
-  //     <TopNavbar />
-
-  //     {/* Layout: Sidebar + Content */}
-  //     <div className="flex flex-1 pt-16"> {/* pt-16 to avoid overlap under fixed navbar */}
-  //       <Sidenav />
-  //       <main className="flex-1 p-6 bg-gray-100">{children}</main>
-  //     </div>
-  //   </body>
-  // </html>
-  <html lang="en">
-  <body className="bg-gray-100">
-    {/* Fixed Sidebar */}
-    <Sidenav />
-
-    {/* Main Layout */}
-    <div className="ml-64"> {/* Shift content to the right of the fixed sidebar */}
-      <TopNavbar /> {/* Optional: Add fixed class and height if needed */}
-
-      <main className="p-6 pt-20 min-h-screen">
-        {children}
-      </main>
-    </div>
-  </body>
-</html>
+    <AdminAuthProvider>
+      <LayoutContent>{children}</LayoutContent>
+    </AdminAuthProvider>
   );
 }

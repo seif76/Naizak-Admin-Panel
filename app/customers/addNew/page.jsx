@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import axios from 'axios';
+import api from '../../../lib/axios';
 import { 
   PlusCircle, 
   Upload, 
@@ -90,8 +90,8 @@ export default function AddCustomerPage() {
         formDataToSend.append('profile_photo', imageFile);
       }
 
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/customers/register`,
+      const response = await api.post(
+        '/api/admin/customers/register',
         formDataToSend,
         {
           headers: {
