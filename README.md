@@ -80,8 +80,8 @@ A comprehensive admin dashboard for managing the ElNaizak multi-service platform
    ```
 
 3. **Run Development Server**:
-   ```bash
-   npm run dev
+```bash
+npm run dev
    ```
 
 4. **Build for Production**:

@@ -3,16 +3,15 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { FaCheckCircle, FaTimesCircle, FaUser, FaEye } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
-
+import api from '../../../lib/axios';
 export default function PendingVendorsPage() {
   const [vendors, setVendors] = useState([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
   const fetchPendingVendors = async () => {
     try {
-      const res = await axios.get(`${BACKEND_URL}/api/admin/vendors/pending`);
+      const res = await api.get(`/api/admin/vendors/pending`);
       setVendors(res.data.vendors || []);
       setLoading(false);
     } catch (error) {
@@ -22,7 +21,7 @@ export default function PendingVendorsPage() {
 
   const approveVendor = async (phone_number) => {
     try {
-      await axios.put(`${BACKEND_URL}/api/admin/vendors/status`, {
+      await api.put(`/api/admin/vendors/status`, {
         phone_number,
         vendor_status: 'Active',
       });
@@ -34,7 +33,7 @@ export default function PendingVendorsPage() {
 
   const rejectVendor = async (phone_number) => {
     try {
-      await axios.put(`${BACKEND_URL}/api/admin/vendors/status`, {
+      await api.put(`/api/admin/vendors/status`, {
         phone_number,
         vendor_status: 'Deactivated',
       });

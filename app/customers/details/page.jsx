@@ -1,7 +1,8 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import axios from 'axios';
+import api from '../../../lib/axios';
+import { CustomersRoute } from '../../../components/auth/ProtectedRoute';
 import { 
   ArrowLeft, 
   User, 
@@ -18,7 +19,7 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 
-export default function CustomerDetailsPage() {
+function CustomerDetailsPage() {
   const [customer, setCustomer] = useState(null);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -30,11 +31,11 @@ export default function CustomerDetailsPage() {
   const fetchCustomerDetails = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/customers/${customerId}`);
+      const response = await api.get(`/api/admin/customers/${customerId}`);
       setCustomer(response.data);
       
       // Fetch customer orders
-      const ordersResponse = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/customers/${customerId}/orders`);
+      const ordersResponse = await api.get(`/api/admin/customers/${customerId}/orders`);
       setOrders(ordersResponse.data.orders || []);
     } catch (error) {
       console.error('Error fetching customer details:', error);
@@ -45,8 +46,8 @@ export default function CustomerDetailsPage() {
 
   const updateCustomerStatus = async (newStatus) => {
     try {
-      await axios.put(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/customers/${customerId}/status`, {
-        status: newStatus
+      await api.put(`/api/admin/customers/${customerId}/status`, {
+        customer_status: newStatus
       });
       fetchCustomerDetails(); // Refresh data
     } catch (error) {
@@ -57,7 +58,7 @@ export default function CustomerDetailsPage() {
   const deleteCustomer = async () => {
     if (window.confirm('Are you sure you want to delete this customer?')) {
       try {
-        await axios.delete(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/customers/${customerId}`);
+        await api.delete(`/api/admin/customers/${customerId}`);
         router.push('/customers/list');
       } catch (error) {
         console.error('Error deleting customer:', error);
@@ -393,5 +394,13 @@ export default function CustomerDetailsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ProtectedCustomerDetailsPage() {
+  return (
+    <CustomersRoute>
+      <CustomerDetailsPage />
+    </CustomersRoute>
   );
 } 

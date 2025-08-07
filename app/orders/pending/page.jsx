@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import { FaShoppingCart, FaSpinner, FaCheck, FaTimes, FaEye, FaTruck, FaUser, FaStore, FaArrowLeft } from 'react-icons/fa';
+import api from '../../../lib/axios';
 
 export default function PendingOrdersPage() {
   const [orders, setOrders] = useState([]);
@@ -15,7 +16,7 @@ export default function PendingOrdersPage() {
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${BACKEND_URL}/api/admin/orders`, {
+      const res = await api.get(`/api/admin/orders`, {
         params: { page, limit: 10, status: 'pending' },
       });
       setOrders(res.data.orders || []);
@@ -28,7 +29,7 @@ export default function PendingOrdersPage() {
 
   const updateOrderStatus = async (orderId, status) => {
     try {
-      await axios.put(`${BACKEND_URL}/api/admin/orders/${orderId}/status`, {
+      await api.put(`/api/admin/orders/${orderId}/status`, {
         status: status
       });
       fetchOrders();

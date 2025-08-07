@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import axios from 'axios';
+import api from '../../lib/axios';
 
 import * as AiIcons from 'react-icons/ai';
 import * as MdIcons from 'react-icons/md';
@@ -16,9 +16,9 @@ export default function SideNav() {
   const [openOrders, setOpenOrders] = useState(false);
   const [openSupport, setOpenSupport] = useState(false);
   const [counts, setCounts] = useState({
-    customers: 0,
-    captains: 0,
-    vendors: 0,
+    customers: { total: 0, active: 0, deactivated: 0 },
+    captains: { total: 0, active: 0, pending: 0, deactivated: 0 },
+    vendors: { total: 0, active: 0, pending: 0, deactivated: 0 },
     orders: {
       total: 0,
       pending: 0,
@@ -34,7 +34,6 @@ export default function SideNav() {
   const [loading, setLoading] = useState(true);
 
   const pathname = usePathname();
-  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
   const toggleCustomer = () => setOpenCustomer(!openCustomer);
   const toggleCaptain = () => setOpenCaptain(!openCaptain);
@@ -49,41 +48,41 @@ export default function SideNav() {
     try {
       setLoading(true);
       
-      // Fetch customer stats
-      const customerRes = await axios.get(`${BACKEND_URL}/api/admin/customers/stats`);
-      
-      // Fetch captain stats
-      const captainRes = await axios.get(`${BACKEND_URL}/api/admin/captains/stats`);
-      
-      // Fetch vendor stats
-      const vendorRes = await axios.get(`${BACKEND_URL}/api/admin/vendors/stats`);
-      
-      
-      
-      // Fetch order stats
-      const orderRes = await axios.get(`${BACKEND_URL}/api/admin/orders/stats`);
-      
-      // Fetch support stats
-      const supportRes = await axios.get(`${BACKEND_URL}/api/admin/support/stats`);
+      // Fetch all stats in parallel
+      const [customerRes, captainRes, vendorRes, orderRes, supportRes] = await Promise.all([
+        api.get('/api/admin/customers/stats'),
+        api.get('/api/admin/captains/stats'),
+        api.get('/api/admin/vendors/stats'),
+        api.get('/api/admin/orders/stats'),
+        api.get('/api/admin/support/stats')
+      ]);
 
       setCounts({
-        customers: customerRes.data || 0,
-        captains: captainRes.data || 0,
-        vendors: vendorRes.data || 0,
+        customers: customerRes.data || { total: 0, active: 0, deactivated: 0 },
+        captains: captainRes.data || { total: 0, active: 0, pending: 0, deactivated: 0 },
+        vendors: vendorRes.data || { total: 0, active: 0, pending: 0, deactivated: 0 },
         orders: {
-          total: orderRes.data.total || 0,
-          pending: orderRes.data.pending || 0,
-          confirmed: orderRes.data.confirmed || 0,
-          completed: orderRes.data.completed || 0,
-          cancelled: orderRes.data.cancelled || 0
+          total: orderRes.data?.total || 0,
+          pending: orderRes.data?.pending || 0,
+          confirmed: orderRes.data?.confirmed || 0,
+          completed: orderRes.data?.completed || 0,
+          cancelled: orderRes.data?.cancelled || 0
         },
         support: {
-          active: supportRes.data.active || 0,
-          resolved: supportRes.data.resolved || 0
+          active: supportRes.data?.active || 0,
+          resolved: supportRes.data?.resolved || 0
         }
       });
     } catch (error) {
       console.error('Error fetching counts:', error);
+      // Set default values on error
+      setCounts({
+        customers: { total: 0, active: 0, deactivated: 0 },
+        captains: { total: 0, active: 0, pending: 0, deactivated: 0 },
+        vendors: { total: 0, active: 0, pending: 0, deactivated: 0 },
+        orders: { total: 0, pending: 0, confirmed: 0, completed: 0, cancelled: 0 },
+        support: { active: 0, resolved: 0 }
+      });
     } finally {
       setLoading(false);
     }

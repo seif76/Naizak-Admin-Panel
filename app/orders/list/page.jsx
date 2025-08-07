@@ -1,10 +1,11 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import { FaShoppingCart, FaSpinner, FaCheck, FaTimes, FaEye, FaTruck, FaUser, FaStore, FaFilter } from 'react-icons/fa';
+import api from '../../../lib/axios';
+import { OrdersRoute } from '../../../components/auth/ProtectedRoute';
 
-export default function OrdersListPage() {
+function OrdersListPage() {
   const [orders, setOrders] = useState([]);
   const [stats, setStats] = useState({});
   const [page, setPage] = useState(1);
@@ -12,12 +13,11 @@ export default function OrdersListPage() {
   const [loading, setLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState('');
   const router = useRouter();
-  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
   const fetchStats = async () => {
     try {
       // This would need to be implemented in the backend
-      const res = await axios.get(`${BACKEND_URL}/api/admin/orders/stats`);
+      const res = await api.get('/api/admin/orders/stats');
       setStats(res.data);
     } catch (error) {
       console.error('Error fetching order stats:', error);
@@ -35,7 +35,7 @@ export default function OrdersListPage() {
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${BACKEND_URL}/api/admin/orders`, {
+      const res = await api.get('/api/admin/orders', {
         params: { page, limit: 10, status: statusFilter || undefined },
       });
       setOrders(res.data.orders || []);
@@ -48,7 +48,7 @@ export default function OrdersListPage() {
 
   const updateOrderStatus = async (orderId, status) => {
     try {
-      await axios.put(`${BACKEND_URL}/api/admin/orders/${orderId}/status`, {
+      await api.put(`/api/admin/orders/${orderId}/status`, {
         status: status
       });
       fetchOrders();
@@ -98,174 +98,232 @@ export default function OrdersListPage() {
       <h1 className="text-2xl font-bold mb-4">Order Management</h1>
 
       {/* Stats with Navigation */}
-      <div className="grid grid-cols-1 sm:grid-cols-5 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
         <div 
-          className="bg-blue-100 p-4 rounded shadow cursor-pointer hover:bg-blue-200 transition-colors"
-          onClick={() => navigateToStatusPage('list')}
+          className="bg-white p-4 rounded-lg shadow cursor-pointer hover:shadow-md transition-shadow"
+          onClick={() => navigateToStatusPage('all')}
         >
-          <div className="flex items-center gap-2 text-blue-600">
-            <FaShoppingCart /> <span className="text-lg">Total: {stats.total || 0}</span>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Total Orders</p>
+              <p className="text-2xl font-bold">{stats.total || 0}</p>
+            </div>
+            <FaShoppingCart className="text-2xl text-gray-400" />
           </div>
         </div>
+
         <div 
-          className="bg-yellow-100 p-4 rounded shadow cursor-pointer hover:bg-yellow-200 transition-colors"
+          className="bg-white p-4 rounded-lg shadow cursor-pointer hover:shadow-md transition-shadow"
           onClick={() => navigateToStatusPage('pending')}
         >
-          <div className="flex items-center gap-2 text-yellow-600">
-            <FaSpinner /> <span className="text-lg">Pending: {stats.pending || 0}</span>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Pending</p>
+              <p className="text-2xl font-bold text-yellow-600">{stats.pending || 0}</p>
+            </div>
+            <FaSpinner className="text-2xl text-yellow-500" />
           </div>
         </div>
+
         <div 
-          className="bg-blue-100 p-4 rounded shadow cursor-pointer hover:bg-blue-200 transition-colors"
+          className="bg-white p-4 rounded-lg shadow cursor-pointer hover:shadow-md transition-shadow"
           onClick={() => navigateToStatusPage('confirmed')}
         >
-          <div className="flex items-center gap-2 text-blue-600">
-            <FaCheck /> <span className="text-lg">Confirmed: {stats.confirmed || 0}</span>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Confirmed</p>
+              <p className="text-2xl font-bold text-blue-600">{stats.confirmed || 0}</p>
+            </div>
+            <FaCheck className="text-2xl text-blue-500" />
           </div>
         </div>
+
         <div 
-          className="bg-green-100 p-4 rounded shadow cursor-pointer hover:bg-green-200 transition-colors"
+          className="bg-white p-4 rounded-lg shadow cursor-pointer hover:shadow-md transition-shadow"
           onClick={() => navigateToStatusPage('completed')}
         >
-          <div className="flex items-center gap-2 text-green-600">
-            <FaCheck /> <span className="text-lg">Completed: {stats.completed || 0}</span>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Completed</p>
+              <p className="text-2xl font-bold text-green-600">{stats.completed || 0}</p>
+            </div>
+            <FaCheck className="text-2xl text-green-500" />
           </div>
         </div>
+
         <div 
-          className="bg-red-100 p-4 rounded shadow cursor-pointer hover:bg-red-200 transition-colors"
+          className="bg-white p-4 rounded-lg shadow cursor-pointer hover:shadow-md transition-shadow"
           onClick={() => navigateToStatusPage('cancelled')}
         >
-          <div className="flex items-center gap-2 text-red-600">
-            <FaTimes /> <span className="text-lg">Cancelled: {stats.cancelled || 0}</span>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Cancelled</p>
+              <p className="text-2xl font-bold text-red-600">{stats.cancelled || 0}</p>
+            </div>
+            <FaTimes className="text-2xl text-red-500" />
           </div>
         </div>
       </div>
 
-      {/* Filter */}
-      <div className="mb-4 flex items-center gap-4">
-        <div className="flex items-center gap-2">
-          <FaFilter className="text-gray-500" />
+      {/* Filters */}
+      <div className="bg-white p-4 rounded-lg shadow mb-6">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <FaFilter className="text-gray-400" />
+            <span className="text-sm font-medium">Filter by Status:</span>
+          </div>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="border rounded px-3 py-2"
+            className="border rounded px-3 py-1 text-sm"
           >
-            <option value="">All Status</option>
+            <option value="">All Orders</option>
             <option value="pending">Pending</option>
             <option value="confirmed">Confirmed</option>
             <option value="completed">Completed</option>
             <option value="cancelled">Cancelled</option>
           </select>
         </div>
-        <div className="text-sm text-gray-600">
-          Showing {orders.length} orders
+      </div>
+
+      {/* Orders Table */}
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left min-w-[900px]">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Order ID</th>
+                <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
+                <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Vendor</th>
+                <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Items</th>
+                <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {loading ? (
+                <tr>
+                  <td colSpan={8} className="px-6 py-4 text-center text-gray-500">
+                    Loading orders...
+                  </td>
+                </tr>
+              ) : orders.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="px-6 py-4 text-center text-gray-500">
+                    No orders found
+                  </td>
+                </tr>
+              ) : (
+                orders.map((order) => (
+                  <tr key={order.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">#{order.id}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <FaUser className="text-gray-400 mr-2" />
+                        <div className="text-sm text-gray-900">{order.customer?.name || 'N/A'}</div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <FaStore className="text-gray-400 mr-2" />
+                        <div className="text-sm text-gray-900">{order.vendor?.name || 'N/A'}</div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {order.items?.length || 0} items
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      ${order.total_amount || 0}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
+                        {getStatusIcon(order.status)}
+                        <span className="ml-1">{order.status}</span>
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {new Date(order.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => navigateToDetails(order.id)}
+                          className="text-indigo-600 hover:text-indigo-900"
+                        >
+                          <FaEye className="inline mr-1" />
+                          View
+                        </button>
+                        {order.status === 'pending' && (
+                          <>
+                            <button
+                              onClick={() => updateOrderStatus(order.id, 'confirmed')}
+                              className="text-green-600 hover:text-green-900"
+                            >
+                              <FaCheck className="inline mr-1" />
+                              Confirm
+                            </button>
+                            <button
+                              onClick={() => updateOrderStatus(order.id, 'cancelled')}
+                              className="text-red-600 hover:text-red-900"
+                            >
+                              <FaTimes className="inline mr-1" />
+                              Cancel
+                            </button>
+                          </>
+                        )}
+                        {order.status === 'confirmed' && (
+                          <button
+                            onClick={() => updateOrderStatus(order.id, 'completed')}
+                            className="text-green-600 hover:text-green-900"
+                          >
+                            <FaCheck className="inline mr-1" />
+                            Complete
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
 
-      {/* Table */}
-      <div className="overflow-auto bg-white shadow rounded">
-        <table className="w-full text-left min-w-[900px]">
-          <thead>
-            <tr className="bg-gray-100 text-sm">
-              <th className="p-3">#</th>
-              <th className="p-3">Order ID</th>
-              <th className="p-3">Customer</th>
-              <th className="p-3">Vendor</th>
-              <th className="p-3">Items</th>
-              <th className="p-3">Total</th>
-              <th className="p-3">Status</th>
-              <th className="p-3">Date</th>
-              <th className="px-3 p-3">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr><td colSpan={9} className="text-center p-5">Loading...</td></tr>
-            ) : orders?.length === 0 ? (
-              <tr><td colSpan={9} className="text-center p-5">No data</td></tr>
-            ) : (
-              orders?.map((order, idx) => (
-                <tr key={order.id} className="border-b hover:bg-gray-50">
-                  <td className="p-3">{(page - 1) * 10 + idx + 1}</td>
-                  <td className="p-3 font-mono text-sm">#{order.id}</td>
-                  <td className="p-3">
-                    <div className="flex items-center gap-2">
-                      <FaUser className="text-gray-400" />
-                      <span>{order.customer_name}</span>
-                    </div>
-                  </td>
-                  <td className="p-3">
-                    <div className="flex items-center gap-2">
-                      <FaStore className="text-gray-400" />
-                      <span>{order.vendor_name}</span>
-                    </div>
-                  </td>
-                  <td className="p-3">{order.items_count || 0} items</td>
-                  <td className="p-3 font-semibold">${order.total_amount || 0}</td>
-                  <td className="p-3">
-                    <span className={`px-2 py-1 rounded text-xs flex items-center gap-1 ${getStatusColor(order.status)}`}>
-                      {getStatusIcon(order.status)}
-                      {order.status}
-                    </span>
-                  </td>
-                  <td className="p-3 text-sm text-gray-600">
-                    {new Date(order.created_at).toLocaleDateString()}
-                  </td>
-                  <td className="px-4 py-2 space-x-2">
-                    <button 
-                      onClick={() => navigateToDetails(order.id)}
-                      className="text-primary hover:text-blue-700" 
-                      title="View Details"
-                    >
-                      <FaEye />
-                    </button>
-                    {order.status === 'pending' && (
-                      <>
-                        <button 
-                          onClick={() => updateOrderStatus(order.id, 'confirmed')}
-                          className="text-green-500 hover:text-green-700"
-                          title="Confirm Order"
-                        >
-                          <FaCheck />
-                        </button>
-                        <button 
-                          onClick={() => updateOrderStatus(order.id, 'cancelled')}
-                          className="text-red-500 hover:text-red-700"
-                          title="Cancel Order"
-                        >
-                          <FaTimes />
-                        </button>
-                      </>
-                    )}
-                    {order.status === 'confirmed' && (
-                      <button 
-                        onClick={() => updateOrderStatus(order.id, 'completed')}
-                        className="text-blue-500 hover:text-blue-700"
-                        title="Mark as Completed"
-                      >
-                        <FaTruck />
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-
       {/* Pagination */}
-      <div className="mt-4 flex justify-center gap-2">
-        {[...Array(totalPages).keys()].map((num) => (
-          <button
-            key={num + 1}
-            className={`px-3 py-1 rounded border ${page === num + 1 ? 'bg-green-500 text-white' : 'bg-white text-gray-800'}`}
-            onClick={() => setPage(num + 1)}
-          >
-            {num + 1}
-          </button>
-        ))}
-      </div>
+      {totalPages > 1 && (
+        <div className="flex justify-center mt-6">
+          <div className="flex gap-2">
+            <button
+              onClick={() => setPage(Math.max(1, page - 1))}
+              disabled={page === 1}
+              className="px-3 py-2 border rounded disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <span className="px-3 py-2">Page {page} of {totalPages}</span>
+            <button
+              onClick={() => setPage(Math.min(totalPages, page + 1))}
+              disabled={page === totalPages}
+              className="px-3 py-2 border rounded disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
     </div>
+  );
+}
+
+export default function ProtectedOrdersListPage() {
+  return (
+    <OrdersRoute>
+      <OrdersListPage />
+    </OrdersRoute>
   );
 } 

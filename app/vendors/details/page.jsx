@@ -25,6 +25,7 @@ import {
   FaEye,
   FaDownload
 } from 'react-icons/fa';
+import api from '../../../lib/axios';
 
 export default function VendorDetailsPage() {
   const [vendor, setVendor] = useState(null);
@@ -42,7 +43,7 @@ export default function VendorDetailsPage() {
   const fetchVendorDetails = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`${BACKEND_URL}/api/admin/vendors/details?phone_number=${phone_number}`);
+      const res = await api.get(`/api/admin/vendors/details?phone_number=${phone_number}`);
       setVendor(res.data);
       setEditForm({
         name: res.data.name,
@@ -64,7 +65,7 @@ export default function VendorDetailsPage() {
   const updateVendorStatus = async (status) => {
     try {
       setUpdating(true);
-      await axios.put(`${BACKEND_URL}/api/admin/vendors/status`, {
+      await api.put(`/api/admin/vendors/status`, {
         phone_number,
         vendor_status: status
       });
@@ -79,7 +80,7 @@ export default function VendorDetailsPage() {
   const updateVendorDetails = async () => {
     try {
       setUpdating(true);
-      await axios.put(`${BACKEND_URL}/api/admin/vendors/update`, {
+      await api.put(`/api/admin/vendors/update`, {
         phone_number,
         ...editForm
       });
@@ -96,7 +97,7 @@ export default function VendorDetailsPage() {
     if (window.confirm('Are you sure you want to delete this vendor? This action cannot be undone.')) {
       try {
         setUpdating(true);
-        await axios.delete(`${BACKEND_URL}/api/admin/vendors/delete?phone_number=${phone_number}`);
+        await api.delete(`/api/admin/vendors/delete?phone_number=${phone_number}`);
         router.push('/vendors/list');
       } catch (error) {
         console.error('Error deleting vendor:', error);

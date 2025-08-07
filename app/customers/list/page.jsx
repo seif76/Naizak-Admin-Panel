@@ -1,58 +1,66 @@
 'use client';
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import { FaUserTie, FaSpinner, FaUserSlash , FaEye, FaTrash } from 'react-icons/fa';
+import { useEffect, useState } from 'react';
+import { FaUser, FaEye, FaEdit, FaTrash, FaCheck, FaTimes } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
+import api from '../../../lib/axios';
+import { CustomersRoute } from '../../../components/auth/ProtectedRoute';
 
-export default function CustomerListPage() {
+function CustomersListPage() {
   const [customers, setCustomers] = useState([]);
   const [stats, setStats] = useState({});
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState('');
-  const BACKEND_URL=  process.env.NEXT_PUBLIC_BACKEND_URL;
   const router = useRouter();
-  
 
   const fetchStats = async () => {
-    const res = await axios.get(`${BACKEND_URL}/api/admin/customers/stats`);
-    setStats(res.data);
+    try {
+      const res = await api.get('/api/admin/customers/stats');
+      setStats(res.data);
+    } catch (error) {
+      console.error('Error fetching customer stats:', error);
+    }
   };
 
   const fetchCustomers = async () => {
     setLoading(true);
-    const res = await axios.get(`${BACKEND_URL}/api/admin/customers`, {
-      params: { page, limit: 10, status: statusFilter || undefined },
-    });
-    //alert(JSON.stringify(res.data.Customers));
-    setCustomers(res.data.customers);
-    setTotalPages(res.data.totalPages);
+    try {
+      const res = await api.get('/api/admin/customers', {
+        params: { page, limit: 10, status: statusFilter || undefined },
+      });
+      setCustomers(res.data.customers || []);
+      setTotalPages(res.data.totalPages || 1);
+    } catch (error) {
+      console.error('Error fetching customers:', error);
+    }
     setLoading(false);
+  };
+
+  const updateCustomerStatus = async (phone_number, status) => {
+    try {
+      await api.put('/api/admin/customers/status', {
+        phone_number,
+        customer_status: status,
+      });
+      fetchCustomers();
+    } catch (error) {
+      console.error('Error updating customer status:', error);
+    }
   };
 
   const deleteCustomer = async (customerId) => {
     if (window.confirm('Are you sure you want to delete this customer?')) {
       try {
-        await axios.delete(`${BACKEND_URL}/api/admin/customers/${customerId}`);
+        await api.delete(`/api/admin/customers/delete?customerId=${customerId}`);
         fetchCustomers();
       } catch (error) {
         console.error('Error deleting customer:', error);
       }
     }
   };
-  const searchwithphoneorname = async (searchTerm) => {
-    if(searchTerm.length > 0){
-    const filteredCustomers = customers.filter(customer => 
-      customer.phone_number.includes(searchTerm) || customer.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-    setCustomers(filteredCustomers);
-  }else{
-    fetchCustomers();
-  }
-  };
 
-  const navigateToCustomerDetails = (customerId) => {
+  const navigateToDetails = (customerId) => {
     router.push(`/customers/details?id=${customerId}`);
   };
 
@@ -69,100 +77,195 @@ export default function CustomerListPage() {
       <h1 className="text-2xl font-bold mb-4">Customer Management</h1>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <div className="bg-blue-100 p-4 rounded shadow">
-          <div className="flex items-center gap-2 text-blue-600">
-            <FaUserTie /> <span className="text-lg">Active: {stats.active || 0}</span>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="bg-white p-4 rounded-lg shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Total Customers</p>
+              <p className="text-2xl font-bold">{stats.total || 0}</p>
+            </div>
+            <FaUser className="text-2xl text-blue-500" />
           </div>
         </div>
-        
-        <div className="bg-red-100 p-4 rounded shadow">
-          <div className="flex items-center gap-2 text-red-600">
-            <FaUserSlash /> <span className="text-lg">Deactivated: {stats.deactivated || 0}</span>
+        <div className="bg-white p-4 rounded-lg shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Active Customers</p>
+              <p className="text-2xl font-bold text-green-600">{stats.active || 0}</p>
+            </div>
+            <FaCheck className="text-2xl text-green-500" />
+          </div>
+        </div>
+        <div className="bg-white p-4 rounded-lg shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Deactivated</p>
+              <p className="text-2xl font-bold text-red-600">{stats.deactivated || 0}</p>
+            </div>
+            <FaTimes className="text-2xl text-red-500" />
           </div>
         </div>
       </div>
 
-      {/* Filter */}
-      <div className="mb-4">
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="border rounded px-3 py-2"
-        >
-          <option value="">All Status</option>
-          <option value="Active">Active</option>
-          <option value="Deactivated">Deactivated</option>
-        </select>
-        <input
-          type="text"
-          placeholder="Search by phone or name"
-          onChange={(e) => searchwithphoneorname(e.target.value)}
-          className="border border-gray-300 ml-2 rounded px-3 py-2"
-        />
+      {/* Filters */}
+      <div className="bg-white p-4 rounded-lg shadow mb-6">
+        <div className="flex items-center gap-4">
+          <span className="text-sm font-medium">Filter by Status:</span>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="border rounded px-3 py-1 text-sm"
+          >
+            <option value="">All Customers</option>
+            <option value="Active">Active</option>
+            <option value="Deactivated">Deactivated</option>
+          </select>
+        </div>
       </div>
 
-      {/* Table */}
-      <div className="overflow-auto bg-white shadow rounded">
-        <table className="w-full text-left min-w-[700px]">
-          <thead>
-            <tr className="bg-gray-100 text-sm">
-              <th className="p-3">#</th>
-              <th className="p-3">Name</th>
-              <th className="p-3">Email</th>
-              <th className="p-3">Gender</th>
-              <th className="p-3">Phone</th>
-              <th className="p-3">Status</th>
-              <th className="p-3">Rating</th>
-              <th className="px-3 p-3">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr><td colSpan={8} className="text-center p-5">Loading...</td></tr>
-            ) : customers?.length === 0 ? (
-              <tr><td colSpan={8} className="text-center p-5">No data</td></tr>
-            ) : (
-              customers?.map((customer, idx) => (
-                <tr key={customer.id} className="border-b">
-                  <td className="p-3">{(page - 1) * 10 + idx + 1}</td>
-                  <td className="p-3">{customer.name}</td>
-                  <td className="p-3">{customer.email}</td>
-                  <td className="p-3">{customer.gender}</td>
-                  <td className="p-3">{customer.phone_number}</td>
-                  <td className="p-3">{customer.customer_status}</td>
-                  <td className="p-3">{customer.rating}</td>
-                  <td className="px-4 py-2 space-x-2">
-                   <button 
-                     onClick={() => navigateToCustomerDetails(customer.id)}
-                     className="text-primary hover:text-blue-700"
-                   >
-                     <FaEye />
-                   </button>
-                   <button onClick={() => deleteCustomer(customer.id)} className="text-red-500 hover:text-red-700">
-                     <FaTrash />
-                 </button>
-                 </td>
+      {/* Customers Table */}
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left min-w-[900px]">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
+                <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
+                <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Gender</th>
+                <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Joined</th>
+                <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {loading ? (
+                <tr>
+                  <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
+                    Loading customers...
+                  </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : customers.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
+                    No customers found
+                  </td>
+                </tr>
+              ) : (
+                customers.map((customer) => (
+                  <tr key={customer.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <FaUser className="text-gray-400 mr-2" />
+                        <div className="text-sm font-medium text-gray-900">{customer.name}</div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {customer.email}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {customer.phone_number}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 capitalize">
+                      {customer.gender}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        customer.customer_status === 'Active' 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {customer.customer_status === 'Active' ? (
+                          <FaCheck className="mr-1" />
+                        ) : (
+                          <FaTimes className="mr-1" />
+                        )}
+                        {customer.customer_status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {new Date(customer.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => navigateToDetails(customer.id)}
+                          className="text-indigo-600 hover:text-indigo-900"
+                        >
+                          <FaEye className="inline mr-1" />
+                          View
+                        </button>
+                        <button
+                          onClick={() => updateCustomerStatus(
+                            customer.phone_number, 
+                            customer.customer_status === 'Active' ? 'Deactivated' : 'Active'
+                          )}
+                          className={`${
+                            customer.customer_status === 'Active'
+                              ? 'text-red-600 hover:text-red-900'
+                              : 'text-green-600 hover:text-green-900'
+                          }`}
+                        >
+                          {customer.customer_status === 'Active' ? (
+                            <>
+                              <FaTimes className="inline mr-1" />
+                              Deactivate
+                            </>
+                          ) : (
+                            <>
+                              <FaCheck className="inline mr-1" />
+                              Activate
+                            </>
+                          )}
+                        </button>
+                        <button
+                          onClick={() => deleteCustomer(customer.id)}
+                          className="text-red-600 hover:text-red-900"
+                        >
+                          <FaTrash className="inline mr-1" />
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Pagination */}
-      <div className="mt-4 flex justify-center gap-2">
-        {[...Array(totalPages).keys()].map((num) => (
-          <button
-            key={num + 1}
-            className={`px-3 py-1 rounded border ${page === num + 1 ? 'bg-green-500 text-white' : 'bg-white text-gray-800'}`}
-            onClick={() => setPage(num + 1)}
-          >
-            {num + 1}
-          </button>
-        ))}
-      </div>
+      {totalPages > 1 && (
+        <div className="flex justify-center mt-6">
+          <div className="flex gap-2">
+            <button
+              onClick={() => setPage(Math.max(1, page - 1))}
+              disabled={page === 1}
+              className="px-3 py-2 border rounded disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <span className="px-3 py-2">Page {page} of {totalPages}</span>
+            <button
+              onClick={() => setPage(Math.min(totalPages, page + 1))}
+              disabled={page === totalPages}
+              className="px-3 py-2 border rounded disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
     </div>
+  );
+}
+
+export default function ProtectedCustomersListPage() {
+  return (
+    <CustomersRoute>
+      <CustomersListPage />
+    </CustomersRoute>
   );
 }
 

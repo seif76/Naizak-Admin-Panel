@@ -105,6 +105,7 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { FaCheckCircle, FaTimesCircle, FaUser, FaEye } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
+import api from '../../../lib/axios';
 
 export default function PendingCaptainsPage() {
   const [captains, setCaptains] = useState([]);
@@ -114,7 +115,7 @@ export default function PendingCaptainsPage() {
 
   const fetchPendingCaptains = async () => {
     try {
-      const res = await axios.get(`${BACKEND_URL}/api/admin/captains/pending`);
+      const res = await api.get(`/api/admin/captains/pending`);
       setCaptains(res.data.captains || []);
       setLoading(false);
     } catch (error) {
@@ -124,7 +125,7 @@ export default function PendingCaptainsPage() {
 
   const approveCaptain = async (phone_number) => {
     try {
-      await axios.put(`${BACKEND_URL}/api/admin/captains/status`, {
+      await api.put(`/api/admin/captains/status`, {
         phone_number,
         captain_status: 'Active',
       });
@@ -136,7 +137,7 @@ export default function PendingCaptainsPage() {
 
   const rejectCaptain = async (phone_number) => {
     try {
-      await axios.put(`${BACKEND_URL}/api/admin/captains/status`, {
+      await api.put(`/api/admin/captains/status`, {
         phone_number,
         captain_status: 'Deactivated',
       });
