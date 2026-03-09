@@ -17,7 +17,7 @@ export default function SideNav() {
   const [openSupport, setOpenSupport] = useState(false);
   const [counts, setCounts] = useState({
     customers: { total: 0, active: 0, deactivated: 0 },
-    captains: { total: 0, active: 0, pending: 0, deactivated: 0 },
+    deliverymen: { total: 0, active: 0, pending: 0, deactivated: 0 },
     vendors: { total: 0, active: 0, pending: 0, deactivated: 0 },
     orders: {
       total: 0,
@@ -49,9 +49,9 @@ export default function SideNav() {
       setLoading(true);
       
       // Fetch all stats in parallel
-      const [customerRes, captainRes, vendorRes, orderRes, supportRes] = await Promise.all([
+      const [customerRes, deliverymenRes, vendorRes, orderRes, supportRes] = await Promise.all([
         api.get('/api/admin/customers/stats'),
-        api.get('/api/admin/captains/stats'),
+        api.get('/api/admin/deliverymen/stats'),
         api.get('/api/admin/vendors/stats'),
         api.get('/api/admin/orders/stats'),
         api.get('/api/admin/support/stats')
@@ -59,7 +59,7 @@ export default function SideNav() {
 
       setCounts({
         customers: customerRes.data || { total: 0, active: 0, deactivated: 0 },
-        captains: captainRes.data || { total: 0, active: 0, pending: 0, deactivated: 0 },
+        deliverymen: deliverymenRes.data || { total: 0, active: 0, pending: 0, deactivated: 0 },
         vendors: vendorRes.data || { total: 0, active: 0, pending: 0, deactivated: 0 },
         orders: {
           total: orderRes.data?.total || 0,
@@ -78,7 +78,7 @@ export default function SideNav() {
       // Set default values on error
       setCounts({
         customers: { total: 0, active: 0, deactivated: 0 },
-        captains: { total: 0, active: 0, pending: 0, deactivated: 0 },
+        deliverymen: { total: 0, active: 0, pending: 0, deactivated: 0 },
         vendors: { total: 0, active: 0, pending: 0, deactivated: 0 },
         orders: { total: 0, pending: 0, confirmed: 0, completed: 0, cancelled: 0 },
         support: { active: 0, resolved: 0 }
@@ -106,7 +106,7 @@ export default function SideNav() {
   // Auto-expand sections based on current route
   useEffect(() => {
     if (pathname.startsWith('/customers')) setOpenCustomer(true);
-    if (pathname.startsWith('/captains')) setOpenCaptain(true);
+    if (pathname.startsWith('/deliverymen')) setOpenCaptain(true);
     if (pathname.startsWith('/vendors')) setOpenVendor(true);
     if (pathname.startsWith('/orders')) setOpenOrders(true);
     if (pathname.startsWith('/support')) setOpenSupport(true);
@@ -169,18 +169,18 @@ export default function SideNav() {
         )}
       </div>
 
-      {/* Captains */}
+      {/* deliverymen */}
       <div className="mt-4">
         <button
           onClick={toggleCaptain}
-          className={`flex items-center justify-between w-full px-2 py-2 rounded transition-colors ${getActiveClass('/captains')}`}
+          className={`flex items-center justify-between w-full px-2 py-2 rounded transition-colors ${getActiveClass('/deliverymen')}`}
         >
           <div className="flex items-center gap-2">
             <MdIcons.MdDriveEta size={20} />
-            <span>Captains</span>
+            <span>Deliverymen</span>
             {!loading && (
               <span className="ml-auto bg-green-600 text-white text-xs px-2 py-1 rounded-full">
-                {counts.captains.total}
+                {counts.deliverymen.total}
               </span>
             )}
           </div>
@@ -189,26 +189,26 @@ export default function SideNav() {
         {openCaptain && (
           <div className="ml-6 mt-2 space-y-1">
             <Link 
-              href="/captains/list" 
-              className={`block px-2 py-1 rounded transition-colors ${getSubmenuActiveClass('/captains/list')}`}
+              href="/deliverymen/list" 
+              className={`block px-2 py-1 rounded transition-colors ${getSubmenuActiveClass('/deliverymen/list')}`}
             >
               List
             </Link>
             <Link 
-              href="/captains/addNew" 
-              className={`block px-2 py-1 rounded transition-colors ${getSubmenuActiveClass('/captains/addNew')}`}
+              href="/deliverymen/addNew" 
+              className={`block px-2 py-1 rounded transition-colors ${getSubmenuActiveClass('/deliverymen/addNew')}`}
             >
               Add New
             </Link>
             <Link 
-              href="/captains/pendingCaptains" 
-              className={`block px-2 py-1 rounded transition-colors ${getSubmenuActiveClass('/captains/pendingCaptains')}`}
+              href="/deliverymen/pendingdeliverymen" 
+              className={`block px-2 py-1 rounded transition-colors ${getSubmenuActiveClass('/deliverymen/pendingdeliverymen')}`}
             >
               <div className="flex items-center justify-between">
                 <span>Pending</span>
-                {!loading && counts.captains.pending > 0 && (
+                {!loading && counts.deliverymen.pending > 0 && (
                   <span className="bg-yellow-500 text-white text-xs px-2 py-1 rounded-full">
-                    {counts.captains.pending}
+                    {counts.deliverymen.pending}
                   </span>
                 )}
               </div>  
@@ -290,58 +290,6 @@ export default function SideNav() {
               className={`block px-2 py-1 rounded transition-colors ${getSubmenuActiveClass('/orders/list')}`}
             >
               All Orders
-            </Link>
-            <Link 
-              href="/orders/pending" 
-              className={`block px-2 py-1 rounded transition-colors ${getSubmenuActiveClass('/orders/pending')}`}
-            >
-              <div className="flex items-center justify-between">
-                <span>Pending</span>
-                {!loading && counts.orders.pending > 0 && (
-                  <span className="bg-yellow-500 text-white text-xs px-2 py-1 rounded-full">
-                    {counts.orders.pending}
-                  </span>
-                )}
-              </div>
-            </Link>
-            <Link 
-              href="/orders/confirmed" 
-              className={`block px-2 py-1 rounded transition-colors ${getSubmenuActiveClass('/orders/confirmed')}`}
-            >
-              <div className="flex items-center justify-between">
-                <span>Confirmed</span>
-                {!loading && counts.orders.confirmed > 0 && (
-                  <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
-                    {counts.orders.confirmed}
-                  </span>
-                )}
-              </div>
-            </Link>
-            <Link 
-              href="/orders/completed" 
-              className={`block px-2 py-1 rounded transition-colors ${getSubmenuActiveClass('/orders/completed')}`}
-            >
-              <div className="flex items-center justify-between">
-                <span>Completed</span>
-                {!loading && counts.orders.completed > 0 && (
-                  <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full">
-                    {counts.orders.completed}
-                  </span>
-                )}
-              </div>
-            </Link>
-            <Link 
-              href="/orders/cancelled" 
-              className={`block px-2 py-1 rounded transition-colors ${getSubmenuActiveClass('/orders/cancelled')}`}
-            >
-              <div className="flex items-center justify-between">
-                <span>Cancelled</span>
-                {!loading && counts.orders.cancelled > 0 && (
-                  <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">
-                    {counts.orders.cancelled}
-                  </span>
-                )}
-              </div>
             </Link>
           </div>
         )}

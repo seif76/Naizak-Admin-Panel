@@ -5,11 +5,12 @@ import TopNavbar from "@/components/navigation/Navbar";
 import { AdminAuthProvider } from "../context/AdminAuthContext";
 import { useAdminAuth } from "../context/AdminAuthContext";
 import { usePathname } from 'next/navigation';
+import SettingsSidenav from "@/components/settings/sidenav";
 
 function LayoutContent({ children }) {
   const { isAuthenticated, loading } = useAdminAuth();
   const pathname = usePathname();
-
+  
   // Show loading while checking auth
   if (loading) {
     return (
@@ -39,7 +40,8 @@ function LayoutContent({ children }) {
     <html lang="en">
       <body className="bg-gray-100">
         {/* Fixed Sidebar */}
-        <Sidenav />
+        {!pathname.startsWith('/settings') && <Sidenav />}
+        {pathname.startsWith('/settings') && <SettingsSidenav />}
 
         {/* Main Layout */}
         <div className="ml-64"> {/* Shift content to the right of the fixed sidebar */}

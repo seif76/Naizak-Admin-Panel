@@ -37,28 +37,17 @@ function CustomersListPage() {
     setLoading(false);
   };
 
-  const updateCustomerStatus = async (phone_number, status) => {
+  const updateCustomerStatus = async (newStatus , customerId) => {
     try {
-      await api.put('/api/admin/customers/status', {
-        phone_number,
-        customer_status: status,
+      await api.put(`/api/admin/customers/${customerId}/status`, {
+        status: newStatus
       });
-      fetchCustomers();
+      fetchCustomers(); // Refresh data
     } catch (error) {
       console.error('Error updating customer status:', error);
     }
   };
 
-  const deleteCustomer = async (customerId) => {
-    if (window.confirm('Are you sure you want to delete this customer?')) {
-      try {
-        await api.delete(`/api/admin/customers/delete?customerId=${customerId}`);
-        fetchCustomers();
-      } catch (error) {
-        console.error('Error deleting customer:', error);
-      }
-    }
-  };
 
   const navigateToDetails = (customerId) => {
     router.push(`/customers/details?id=${customerId}`);
@@ -197,8 +186,8 @@ function CustomersListPage() {
                         </button>
                         <button
                           onClick={() => updateCustomerStatus(
-                            customer.phone_number, 
-                            customer.customer_status === 'Active' ? 'Deactivated' : 'Active'
+                            customer.customer_status === 'Active' ? 'Deactivated' : 'Active',
+                            customer.id, 
                           )}
                           className={`${
                             customer.customer_status === 'Active'
@@ -218,13 +207,7 @@ function CustomersListPage() {
                             </>
                           )}
                         </button>
-                        <button
-                          onClick={() => deleteCustomer(customer.id)}
-                          className="text-red-600 hover:text-red-900"
-                        >
-                          <FaTrash className="inline mr-1" />
-                          Delete
-                        </button>
+                        
                       </div>
                     </td>
                   </tr>

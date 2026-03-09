@@ -55,16 +55,8 @@ function CustomerDetailsPage() {
     }
   };
 
-  const deleteCustomer = async () => {
-    if (window.confirm('Are you sure you want to delete this customer?')) {
-      try {
-        await api.delete(`/api/admin/customers/${customerId}`);
-        router.push('/customers/list');
-      } catch (error) {
-        console.error('Error deleting customer:', error);
-      }
-    }
-  };
+
+
 
   useEffect(() => {
     if (customerId) {
@@ -161,12 +153,7 @@ function CustomerDetailsPage() {
               >
                 {customer.customer_status === 'Active' ? 'Deactivate' : 'Activate'}
               </button>
-              <button
-                onClick={deleteCustomer}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
+              
             </div>
           </div>
         </div>

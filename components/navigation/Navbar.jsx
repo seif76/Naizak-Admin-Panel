@@ -49,29 +49,6 @@ export default function TopNavbar() {
 
       {/* Right: Module Selector and User Menu */}
       <div className="flex items-center gap-4">
-        {/* Module Selector */}
-        <div className="relative">
-          <button
-            onClick={() => setShowModules((prev) => !prev)}
-            className="flex items-center gap-2 border border-gray-300 rounded px-3 py-2 hover:bg-gray-100 transition-all text-sm"
-          >
-            <FaLeaf className="text-green-600" />
-            <span>Grocery</span>
-            <FaChevronDown className="text-gray-500" />
-          </button>
-
-          {showModules && (
-            <div className="absolute right-0 mt-2 w-64 bg-white border rounded shadow-lg z-50 p-4 grid grid-cols-2 gap-3">
-              <ModuleItem icon={<FaLeaf />} label="Grocery" active />
-              <ModuleItem icon={<FaClinicMedical />} label="Pharmacy" />
-              <ModuleItem icon={<FaShoppingBag />} label="Shop" />
-              <ModuleItem icon={<FaHamburger />} label="Food" />
-              <ModuleItem icon={<FaCar />} label="Rental" />
-              <ModuleItem icon={<FaCar />} label="Parcel" />
-              <ModuleItem icon={<FaPlus />} label="Add" />
-            </div>
-          )}
-        </div>
 
         {/* User Menu */}
         <div className="relative">
@@ -106,17 +83,3 @@ export default function TopNavbar() {
     </nav>
   );
 }
-
-function ModuleItem({ icon, label, active }) {
-  return (
-    <button
-      className={`flex flex-col items-center p-3 rounded text-sm hover:bg-gray-100 ${
-        active ? 'bg-green-100 border border-green-400' : ''
-      }`}
-    >
-      <div className="text-xl">{icon}</div>
-      <span className="mt-1">{label}</span>
-    </button>
-  );
-}
-

@@ -108,24 +108,12 @@ export const AdminAuthProvider = ({ children }) => {
     }
   };
 
-  const hasPermission = (resource, action) => {
-    if (!admin || !admin.permissions) return false;
-    return admin.permissions[resource]?.includes(action) || false;
-  };
-
-  const hasRole = (role) => {
-    if (!admin) return false;
-    return admin.role === role;
-  };
-
   const value = {
     admin,
     isAuthenticated,
     loading,
     login,
     logout,
-    hasPermission,
-    hasRole,
     checkAuthStatus
   };
 
@@ -134,4 +122,4 @@ export const AdminAuthProvider = ({ children }) => {
       {children}
     </AdminAuthContext.Provider>
   );
-}; 
+};
