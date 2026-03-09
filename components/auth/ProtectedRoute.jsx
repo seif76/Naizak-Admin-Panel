@@ -4,12 +4,10 @@ import { useRouter } from 'next/navigation';
 import { useAdminAuth } from '../../context/AdminAuthContext';
 
 export default function ProtectedRoute({ 
-  children, 
-  requiredPermissions = [], 
-  requiredRole = null,
+  children,
   fallback = null 
 }) {
-  const { isAuthenticated, loading, admin, hasPermission, hasRole } = useAdminAuth();
+  const { isAuthenticated, loading } = useAdminAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -32,108 +30,44 @@ export default function ProtectedRoute({
     return null; // Will redirect in useEffect
   }
 
-  // Check role requirement
-  if (requiredRole && !hasRole(requiredRole)) {
-    return fallback || (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-red-600 mb-4">Access Denied</h2>
-          <p className="text-gray-600">You don't have the required role to access this page.</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Check permission requirements
-  if (requiredPermissions.length > 0) {
-    const hasAllPermissions = requiredPermissions.every(({ resource, action }) =>
-      hasPermission(resource, action)
-    );
-
-    if (!hasAllPermissions) {
-      return fallback || (
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold text-red-600 mb-4">Access Denied</h2>
-            <p className="text-gray-600">You don't have the required permissions to access this page.</p>
-          </div>
-        </div>
-      );
-    }
-  }
-
+  // All role and permission checks have been removed. 
+  // If the user is authenticated, they can view the children.
   return children;
 }
 
-// Permission-based route components
+// Permission-based route components (now just basic auth guards to prevent import errors)
 export function CustomersRoute({ children }) {
-  return (
-    <ProtectedRoute 
-      requiredPermissions={[{ resource: 'customers', action: 'view' }]}
-      children={children}
-    />
-  );
+  return <ProtectedRoute>{children}</ProtectedRoute>;
 }
 
 export function CaptainsRoute({ children }) {
-  return (
-    <ProtectedRoute 
-      requiredPermissions={[{ resource: 'captains', action: 'view' }]}
-      children={children}
-    />
-  );
+  return <ProtectedRoute>{children}</ProtectedRoute>;
+}
+
+export function DeliverymenRoute({ children }) {
+  return <ProtectedRoute>{children}</ProtectedRoute>;
 }
 
 export function VendorsRoute({ children }) {
-  return (
-    <ProtectedRoute 
-      requiredPermissions={[{ resource: 'vendors', action: 'view' }]}
-      children={children}
-    />
-  );
+  return <ProtectedRoute>{children}</ProtectedRoute>;
 }
 
 export function OrdersRoute({ children }) {
-  return (
-    <ProtectedRoute 
-      requiredPermissions={[{ resource: 'orders', action: 'view' }]}
-      children={children}
-    />
-  );
+  return <ProtectedRoute>{children}</ProtectedRoute>;
 }
 
 export function AnalyticsRoute({ children }) {
-  return (
-    <ProtectedRoute 
-      requiredPermissions={[{ resource: 'analytics', action: 'view' }]}
-      children={children}
-    />
-  );
+  return <ProtectedRoute>{children}</ProtectedRoute>;
 }
 
 export function SupportRoute({ children }) {
-  return (
-    <ProtectedRoute 
-      requiredPermissions={[{ resource: 'support', action: 'view' }]}
-      children={children}
-    />
-  );
+  return <ProtectedRoute>{children}</ProtectedRoute>;
 }
 
 export function SettingsRoute({ children }) {
-  return (
-    <ProtectedRoute 
-      requiredPermissions={[{ resource: 'settings', action: 'view' }]}
-      children={children}
-    />
-  );
+  return <ProtectedRoute>{children}</ProtectedRoute>;
 }
 
 export function SuperAdminRoute({ children }) {
-  return (
-    <ProtectedRoute 
-      requiredRole="super_admin"
-      children={children}
-    />
-  );
-} 
+  return <ProtectedRoute>{children}</ProtectedRoute>;
+}

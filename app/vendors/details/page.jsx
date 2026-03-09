@@ -22,8 +22,7 @@ import {
   FaShieldAlt,
   FaClock,
   FaCamera,
-  FaEye,
-  FaDownload
+  FaEye
 } from 'react-icons/fa';
 import api from '../../../lib/axios';
 
@@ -93,33 +92,13 @@ export default function VendorDetailsPage() {
     }
   };
 
-  const deleteVendor = async () => {
-    if (window.confirm('Are you sure you want to delete this vendor? This action cannot be undone.')) {
-      try {
-        setUpdating(true);
-        await api.delete(`/api/admin/vendors/delete?phone_number=${phone_number}`);
-        router.push('/vendors/list');
-      } catch (error) {
-        console.error('Error deleting vendor:', error);
-      } finally {
-        setUpdating(false);
-      }
-    }
-  };
+
 
   const openImageModal = (imageUrl, title) => {
     setSelectedImage({ url: imageUrl, title });
     setShowImageModal(true);
   };
 
-  const downloadImage = (imageUrl, filename) => {
-    const link = document.createElement('a');
-    link.href = imageUrl;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
 
   useEffect(() => {
     if (phone_number) {
@@ -170,7 +149,7 @@ export default function VendorDetailsPage() {
     }
   };
 
-  const ImageCard = ({ imageUrl, title, subtitle, downloadName }) => (
+  const ImageCard = ({ imageUrl, title, subtitle,  }) => (
     <div className="bg-white rounded-lg shadow-md overflow-hidden">
       <div className="relative group">
         <img
@@ -191,15 +170,7 @@ export default function VendorDetailsPage() {
             >
               <FaEye className="text-gray-700" />
             </button>
-            {imageUrl && (
-              <button
-                onClick={() => downloadImage(imageUrl, downloadName)}
-                className="bg-white bg-opacity-90 p-2 rounded-full hover:bg-opacity-100"
-                title="Download"
-              >
-                <FaDownload className="text-gray-700" />
-              </button>
-            )}
+           
           </div>
         </div>
       </div>
@@ -231,13 +202,7 @@ export default function VendorDetailsPage() {
           >
             <FaEdit /> Edit
           </button>
-          <button
-            onClick={deleteVendor}
-            className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 flex items-center gap-2"
-            disabled={updating}
-          >
-            <FaTrash /> Delete
-          </button>
+     
         </div>
       </div>
 
@@ -271,35 +236,31 @@ export default function VendorDetailsPage() {
                 imageUrl={vendor.profile_photo}
                 title="Profile Photo"
                 subtitle="Vendor's profile picture"
-                downloadName={`${vendor.name}-profile.jpg`}
               />
               
               <ImageCard
                 imageUrl={vendor.vendor_info?.shop_front_photo}
                 title="Shop Front"
                 subtitle="Shop front view"
-                downloadName={`${vendor.vendor_info?.shop_name}-front.jpg`}
+              
               />
               
               <ImageCard
                 imageUrl={vendor.vendor_info?.logo}
                 title="Shop Logo"
                 subtitle="Vendor's shop logo"
-                downloadName={`${vendor.vendor_info?.shop_name}-logo.jpg`}
               />
               
               <ImageCard
                 imageUrl={vendor.vendor_info?.passport_photo}
                 title="Passport Photo"
                 subtitle="Owner's passport photo"
-                downloadName={`${vendor.name}-passport.jpg`}
               />
               
               <ImageCard
                 imageUrl={vendor.vendor_info?.license_photo}
                 title="License Photo"
                 subtitle="Business license"
-                downloadName={`${vendor.vendor_info?.shop_name}-license.jpg`}
               />
             </div>
           </div>
@@ -703,12 +664,7 @@ export default function VendorDetailsPage() {
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold">{selectedImage.title}</h3>
               <div className="flex gap-2">
-                <button
-                  onClick={() => downloadImage(selectedImage.url, `${selectedImage.title}.jpg`)}
-                  className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 flex items-center gap-1"
-                >
-                  <FaDownload /> Download
-                </button>
+              
                 <button
                   onClick={() => setShowImageModal(false)}
                   className="bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600"

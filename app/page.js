@@ -17,7 +17,7 @@ import api from '../lib/axios';
 export default function Dashboard() {
   const [stats, setStats] = useState({
     customers: { active: 0, deactivated: 0 },
-    captains: { active: 0, pending: 0, deactivated: 0 },
+    deliverymen: { active: 0, pending: 0, deactivated: 0 },
     vendors: { active: 0, pending: 0, deactivated: 0 },
     orders: { total: 0, pending: 0, completed: 0 },
     rides: { total: 0, active: 0, completed: 0 }
@@ -33,15 +33,15 @@ export default function Dashboard() {
       setLoading(true);
       
       // Fetch all stats in parallel
-      const [customersRes, captainsRes, vendorsRes] = await Promise.all([
+      const [customersRes, deliverymenRes, vendorsRes] = await Promise.all([
         api.get('/api/admin/customers/stats'),
-        api.get('/api/admin/captains/stats'),
+        api.get('/api/admin/deliverymen/stats'),
         api.get('/api/admin/vendors/stats')
       ]);
 
       setStats({
         customers: customersRes.data,
-        captains: captainsRes.data,
+        deliverymen: deliverymenRes.data,
         vendors: vendorsRes.data,
         orders: { total: 0, pending: 0, completed: 0 }, // TODO: Add order stats
         rides: { total: 0, active: 0, completed: 0 } // TODO: Add ride stats
@@ -109,11 +109,11 @@ export default function Dashboard() {
           subtitle={`${stats.customers.active} active`}
         />
         <StatCard
-          title="Total Captains"
-          value={stats.captains.active + stats.captains.pending + stats.captains.deactivated}
-          icon={<FaUserTie />}
+          title="Total deliverymen"
+          value={stats.deliverymen.active + stats.deliverymen.pending + stats.deliverymen.deactivated}
+          icon={<FaCar />}
           color="border-l-green-500"
-          subtitle={`${stats.captains.pending} pending`}
+          subtitle={`${stats.deliverymen.pending} pending`}
         />
         <StatCard
           title="Total Vendors"
@@ -143,11 +143,11 @@ export default function Dashboard() {
             href="/customers/list"
           />
           <QuickActionCard
-            title="Manage Captains"
-            description="View and manage captain accounts"
+            title="Manage deliverymen"
+            description="View and manage deliverymen accounts"
             icon={<FaUserTie />}
             color="border-l-green-500"
-            href="/captains/list"
+            href="/deliverymen/list"
           />
           <QuickActionCard
             title="Manage Vendors"

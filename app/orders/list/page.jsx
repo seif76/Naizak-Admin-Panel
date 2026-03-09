@@ -26,7 +26,7 @@ function OrdersListPage() {
         total: 0,
         pending: 0,
         confirmed: 0,
-        completed: 0,
+        delivered: 0,
         cancelled: 0
       });
     }
@@ -38,6 +38,7 @@ function OrdersListPage() {
       const res = await api.get('/api/admin/orders', {
         params: { page, limit: 10, status: statusFilter || undefined },
       });
+     // alert(JSON.stringify(res.data.orders[0].vendors[0].phone_number))     
       setOrders(res.data.orders || []);
       setTotalPages(res.data.totalPages || 1);
     } catch (error) {
@@ -144,8 +145,8 @@ function OrdersListPage() {
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Completed</p>
-              <p className="text-2xl font-bold text-green-600">{stats.completed || 0}</p>
+              <p className="text-sm text-gray-600">Delivered</p>
+              <p className="text-2xl font-bold text-green-600">{stats.delivered || 0}</p>
             </div>
             <FaCheck className="text-2xl text-green-500" />
           </div>
@@ -180,7 +181,8 @@ function OrdersListPage() {
             <option value="">All Orders</option>
             <option value="pending">Pending</option>
             <option value="confirmed">Confirmed</option>
-            <option value="completed">Completed</option>
+            <option value="ready">Ready</option>
+            <option value="delivered">Delivered</option>
             <option value="cancelled">Cancelled</option>
           </select>
         </div>
@@ -230,7 +232,7 @@ function OrdersListPage() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <FaStore className="text-gray-400 mr-2" />
-                        <div className="text-sm text-gray-900">{order.vendor?.name || 'N/A'}</div>
+                        <div className="text-sm text-gray-900">{order.vendors[0]?.vendor_info?.shop_name || 'N/A'}</div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">

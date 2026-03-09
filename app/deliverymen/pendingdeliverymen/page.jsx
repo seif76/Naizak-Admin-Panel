@@ -1,64 +1,64 @@
 // 'use client';
 // import { useEffect, useState } from 'react';
-// import axios from 'axios';
-// import { FaCheckCircle, FaTimesCircle, FaUser, FaEye } from 'react-icons/fa';
+// import { FaCheckCircle, FaTimesCircle, FaMotorcycle, FaEye } from 'react-icons/fa';
 // import { useRouter } from 'next/navigation';
 // import api from '../../../lib/axios';
-// export default function PendingVendorsPage() {
-//   const [vendors, setVendors] = useState([]);
+
+// export default function PendingDeliverymenPage() {
+//   const [deliverymen, setDeliverymen] = useState([]);
 //   const [loading, setLoading] = useState(true);
 //   const router = useRouter();
 
-//   const fetchPendingVendors = async () => {
+//   const fetchPendingDeliverymen = async () => {
 //     try {
-//       const res = await api.get(`/api/admin/vendors/pending`);
-//       setVendors(res.data.vendors || []);
+//       const res = await api.get(`/api/admin/deliverymen/pending`);
+//       setDeliverymen(res.data || []);
 //       setLoading(false);
 //     } catch (error) {
-//       console.error('Failed to fetch vendors', error);
+//       console.error('Failed to fetch deliverymen', error);
 //     }
 //   };
 
-//   const approveVendor = async (phone_number) => {
+//   const approveDeliveryman = async (id) => {
 //     try {
-//       await api.put(`/api/admin/vendors/status`, {
-//         phone_number,
-//         vendor_status: 'Active',
+//       await api.put(`/api/admin/deliverymen/status`, {
+//         id,
+//         status: 'Active',
 //       });
-//       fetchPendingVendors();
+//       fetchPendingDeliverymen();
 //     } catch (error) {
 //       alert(error.response?.data?.error || 'Failed to approve');
 //     }
 //   };
 
-//   const rejectVendor = async (phone_number) => {
+//   const rejectDeliveryman = async (id) => {
 //     try {
-//       await api.put(`/api/admin/vendors/status`, {
-//         phone_number,
-//         vendor_status: 'Deactivated',
+//       await api.put(`/api/admin/deliverymen/status`, {
+//         id,
+//         status: 'Deactivated',
 //       });
-//       fetchPendingVendors();
+//       fetchPendingDeliverymen();
 //     } catch (error) {
 //       alert(error.response?.data?.error || 'Failed to reject');
 //     }
 //   };
 
-//   const navigateToDetails = (phone_number) => {
-//     router.push(`/vendors/details/${phone_number}`);
+//   const navigateToDetails = (id) => {
+//     router.push(`/deliverymen/details?id=${id}`);
 //   };
 
 //   useEffect(() => {
-//     fetchPendingVendors();
+//     fetchPendingDeliverymen();
 //   }, []);
 
 //   return (
 //     <div className="p-6">
-//       <h1 className="text-2xl font-bold mb-4 text-primary">🚦 Pending Vendor Requests</h1>
+//       <h1 className="text-2xl font-bold mb-4 text-primary">🚦 Pending Deliveryman Requests</h1>
 
 //       {loading ? (
 //         <p className="text-gray-600">Loading...</p>
-//       ) : vendors.length === 0 ? (
-//         <p className="text-gray-600">No pending vendor requests found.</p>
+//       ) : deliverymen.length === 0 ? (
+//         <p className="text-gray-600">No pending deliveryman requests found.</p>
 //       ) : (
 //         <div className="overflow-auto bg-white shadow rounded-md">
 //           <table className="w-full min-w-[900px]">
@@ -68,33 +68,33 @@
 //                 <th className="p-3">Name</th>
 //                 <th className="p-3">Phone</th>
 //                 <th className="p-3">Email</th>
-//                 <th className="p-3">Shop Name</th>
+//                 <th className="p-3">Vehicle Type</th>
 //                 <th className="p-3">Actions</th>
 //               </tr>
 //             </thead>
 //             <tbody>
-//               {vendors.map((vendor, idx) => (
-//                 <tr key={vendor.id} className="border-t hover:bg-gray-50 text-sm">
+//               {deliverymen.map((deliveryman, idx) => (
+//                 <tr key={deliveryman.id} className="border-t hover:bg-gray-50 text-sm">
 //                   <td className="p-3">{idx + 1}</td>
-//                   <td className="p-3 flex items-center gap-2"><FaUser /> {vendor.name}</td>
-//                   <td className="p-3">{vendor.phone_number}</td>
-//                   <td className="p-3">{vendor.email}</td>
-//                   <td className="p-3">{vendor.shop_name || 'N/A'}</td>
+//                   <td className="p-3 flex items-center gap-2"><FaMotorcycle /> {deliveryman.name}</td>
+//                   <td className="p-3">{deliveryman.phone_number}</td>
+//                   <td className="p-3">{deliveryman.email}</td>
+//                   <td className="p-3">{deliveryman.vehicle_type || 'N/A'}</td>
 //                   <td className="p-3 space-x-2 flex">
 //                     <button
-//                       onClick={() => approveVendor(vendor.phone_number)}
+//                       onClick={() => approveDeliveryman(deliveryman.id)}
 //                       className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
 //                     >
 //                       <FaCheckCircle className="inline mr-1" /> Approve
 //                     </button>
 //                     <button
-//                       onClick={() => rejectVendor(vendor.phone_number)}
+//                       onClick={() => rejectDeliveryman(deliveryman.id)}
 //                       className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
 //                     >
 //                       <FaTimesCircle className="inline mr-1" /> Reject
 //                     </button>
 //                     <button
-//                       onClick={() => navigateToDetails(vendor.phone_number)}
+//                       onClick={() => navigateToDetails(deliveryman.id)}
 //                       className="bg-primary text-white px-3 py-1 rounded hover:bg-green-700"
 //                     >
 //                       <FaEye className="inline mr-1" /> View
@@ -108,21 +108,18 @@
 //       )}
 //     </div>
 //   );
-// } 
-
+// }
 
 
 'use client';
 import { useEffect, useState } from 'react';
-import {
-  FaCheckCircle, FaTimesCircle, FaUser, FaEye,
-  FaChevronLeft, FaChevronRight, FaSearch, FaClock, FaStore
-} from 'react-icons/fa';
+import { FaCheckCircle, FaTimesCircle, FaMotorcycle, FaEye, FaChevronLeft, FaChevronRight, FaSearch, FaClock } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import api from '../../../lib/axios';
 
-export default function PendingVendorsPage() {
-  const [vendors, setVendors] = useState([]);
+export default function PendingDeliverymenPage() {
+  const [deliverymen, setDeliverymen] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -131,64 +128,64 @@ export default function PendingVendorsPage() {
   const limit = 10;
   const router = useRouter();
 
-  const fetchPendingVendors = async (currentPage = 1) => {
+  const fetchPendingDeliverymen = async (currentPage = 1) => {
     setLoading(true);
     try {
-      const res = await api.get(`/api/admin/vendors/pending`, {
+      const res = await api.get(`/api/admin/deliverymen/pending`, {
         params: { page: currentPage, limit },
       });
 
       const data = res.data;
-      const list = Array.isArray(data) ? data : (data.vendors || []);
+      // support both array response and { deliverymen, total } shape
+      const list = Array.isArray(data) ? data : (data.deliverymen || []);
       const totalCount = data.total || list.length;
 
-      setVendors(list);
+      setDeliverymen(list);
       setTotal(totalCount);
       setTotalPages(Math.ceil(totalCount / limit));
+      setLoading(false);
     } catch (error) {
-      console.error('Failed to fetch vendors', error);
-    } finally {
+      console.error('Failed to fetch deliverymen', error);
       setLoading(false);
     }
   };
 
-  const approveVendor = async (phone_number) => {
+  const approveDeliveryman = async (id) => {
     try {
-      await api.put(`/api/admin/vendors/status`, { phone_number, vendor_status: 'Active' });
-      fetchPendingVendors(page);
+      await api.put(`/api/admin/deliverymen/${id}/status`, { id, status: 'Active' });
+      fetchPendingDeliverymen(page);
     } catch (error) {
       alert(error.response?.data?.error || 'Failed to approve');
     }
   };
 
-  const rejectVendor = async (phone_number) => {
+  const rejectDeliveryman = async (id) => {
     try {
-      await api.put(`/api/admin/vendors/status`, { phone_number, vendor_status: 'Deactivated' });
-      fetchPendingVendors(page);
+      await api.put(`/api/admin/deliverymen/${id}/status`, { id, status: 'Deactivated' });
+      fetchPendingDeliverymen(page);
     } catch (error) {
       alert(error.response?.data?.error || 'Failed to reject');
     }
   };
 
-  const navigateToDetails = (phone_number) => {
-    router.push(`/vendors/details?phone_number=${phone_number}`);
+  const navigateToDetails = (id) => {
+    router.push(`/deliverymen/details?id=${id}`);
   };
 
   const handlePageChange = (newPage) => {
     if (newPage < 1 || newPage > totalPages) return;
     setPage(newPage);
-    fetchPendingVendors(newPage);
+    fetchPendingDeliverymen(newPage);
   };
 
   useEffect(() => {
-    fetchPendingVendors(1);
+    fetchPendingDeliverymen(1);
   }, []);
 
-  const filtered = vendors.filter((v) =>
-    v.name?.toLowerCase().includes(search.toLowerCase()) ||
-    v.email?.toLowerCase().includes(search.toLowerCase()) ||
-    v.phone_number?.includes(search) ||
-    v.vendor_info?.shop_name?.toLowerCase().includes(search.toLowerCase())
+  const filtered = deliverymen.filter((d) =>
+    d.name?.toLowerCase().includes(search.toLowerCase()) ||
+    d.email?.toLowerCase().includes(search.toLowerCase()) ||
+    d.phone_number?.includes(search)
   );
 
   return (
@@ -198,7 +195,7 @@ export default function PendingVendorsPage() {
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-primary flex items-center gap-2">
-            <FaClock className="text-yellow-500" /> Pending Vendor Requests
+            <FaClock className="text-yellow-500" /> Pending Deliveryman Requests
           </h1>
           <p className="text-sm text-gray-500 mt-1">
             {total} request{total !== 1 ? 's' : ''} awaiting review
@@ -210,7 +207,7 @@ export default function PendingVendorsPage() {
           <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
           <input
             type="text"
-            placeholder="Search name, email, phone or shop..."
+            placeholder="Search name, email or phone..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
@@ -222,14 +219,14 @@ export default function PendingVendorsPage() {
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 text-gray-400">
-            <FaStore className="text-4xl mb-3 animate-bounce text-primary" />
-            <p className="text-sm">Loading vendors...</p>
+            <FaMotorcycle className="text-4xl mb-3 animate-bounce text-primary" />
+            <p className="text-sm">Loading deliverymen...</p>
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-gray-400">
-            <FaStore className="text-4xl mb-3" />
+            <FaMotorcycle className="text-4xl mb-3" />
             <p className="text-sm font-medium">No pending requests found</p>
-            <p className="text-xs mt-1">All vendors have been reviewed</p>
+            <p className="text-xs mt-1">All deliverymen have been reviewed</p>
           </div>
         ) : (
           <>
@@ -238,18 +235,18 @@ export default function PendingVendorsPage() {
                 <thead>
                   <tr className="bg-gray-50 border-b border-gray-100 text-gray-500 uppercase text-xs tracking-wide">
                     <th className="px-4 py-3 text-left w-10">#</th>
-                    <th className="px-4 py-3 text-left">Vendor</th>
+                    <th className="px-4 py-3 text-left">Deliveryman</th>
                     <th className="px-4 py-3 text-left">Phone</th>
                     <th className="px-4 py-3 text-left">Email</th>
-                    <th className="px-4 py-3 text-left">Shop Name</th>
+                    <th className="px-4 py-3 text-left">Gender</th>
                     <th className="px-4 py-3 text-left">Status</th>
                     <th className="px-4 py-3 text-left">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
-                  {filtered.map((vendor, idx) => (
+                  {filtered.map((deliveryman, idx) => (
                     <tr
-                      key={vendor.id}
+                      key={deliveryman.id}
                       className="hover:bg-blue-50/30 transition-colors duration-150"
                     >
                       <td className="px-4 py-3 text-gray-400 font-mono text-xs">
@@ -259,31 +256,24 @@ export default function PendingVendorsPage() {
                       {/* Avatar + Name */}
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
-                          {vendor.vendor_info.logo? (
+                          {deliveryman.profile_photo ? (
                             <img
-                              src={vendor.vendor_info.logo}
-                              alt={vendor.name}
+                              src={deliveryman.profile_photo}
+                              alt={deliveryman.name}
                               className="w-9 h-9 rounded-full object-cover border border-gray-200"
                             />
                           ) : (
                             <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
-                              {vendor.name?.charAt(0).toUpperCase()}
+                              {deliveryman.name?.charAt(0).toUpperCase()}
                             </div>
                           )}
-                          <span className="font-medium text-gray-800">{vendor.name}</span>
+                          <span className="font-medium text-gray-800">{deliveryman.name}</span>
                         </div>
                       </td>
 
-                      <td className="px-4 py-3 text-gray-600">{vendor.phone_number}</td>
-                      <td className="px-4 py-3 text-gray-600">{vendor.email || 'N/A'}</td>
-
-                      {/* Shop Name */}
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-1.5 text-gray-600">
-                          <FaStore className="text-gray-300 text-xs" />
-                          {vendor.vendor_info?.shop_name || vendor.shop_name || 'N/A'}
-                        </div>
-                      </td>
+                      <td className="px-4 py-3 text-gray-600">{deliveryman.phone_number}</td>
+                      <td className="px-4 py-3 text-gray-600">{deliveryman.email || 'N/A'}</td>
+                      <td className="px-4 py-3 text-gray-600 capitalize">{deliveryman.gender || 'N/A'}</td>
 
                       {/* Status Badge */}
                       <td className="px-4 py-3">
@@ -297,19 +287,19 @@ export default function PendingVendorsPage() {
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           <button
-                            onClick={() => approveVendor(vendor.phone_number)}
+                            onClick={() => approveDeliveryman(deliveryman.id)}
                             className="flex items-center gap-1.5 bg-green-500 hover:bg-green-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
                           >
                             <FaCheckCircle /> Approve
                           </button>
                           <button
-                            onClick={() => rejectVendor(vendor.phone_number)}
+                            onClick={() => rejectDeliveryman(deliveryman.id)}
                             className="flex items-center gap-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
                           >
                             <FaTimesCircle /> Reject
                           </button>
                           <button
-                            onClick={() => navigateToDetails(vendor.phone_number)}
+                            onClick={() => navigateToDetails(deliveryman.id)}
                             className="flex items-center gap-1.5 bg-primary hover:opacity-90 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-opacity"
                           >
                             <FaEye /> View
@@ -325,12 +315,7 @@ export default function PendingVendorsPage() {
             {/* Pagination */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-gray-100 bg-gray-50/50">
               <p className="text-xs text-gray-500">
-                Showing{' '}
-                <span className="font-semibold text-gray-700">{(page - 1) * limit + 1}</span>
-                {' – '}
-                <span className="font-semibold text-gray-700">{Math.min(page * limit, total)}</span>
-                {' of '}
-                <span className="font-semibold text-gray-700">{total}</span> results
+                Showing <span className="font-semibold text-gray-700">{(page - 1) * limit + 1}</span> – <span className="font-semibold text-gray-700">{Math.min(page * limit, total)}</span> of <span className="font-semibold text-gray-700">{total}</span> results
               </p>
 
               <div className="flex items-center gap-1">

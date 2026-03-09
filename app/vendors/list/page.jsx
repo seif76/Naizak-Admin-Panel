@@ -49,16 +49,6 @@ function VendorsListPage() {
     }
   };
 
-  const deleteVendor = async (phone_number) => {
-    if (window.confirm('Are you sure you want to delete this vendor?')) {
-      try {
-        await api.delete(`/api/admin/vendors/delete?phone_number=${phone_number}`);
-        fetchVendors();
-      } catch (error) {
-        console.error('Error deleting vendor:', error);
-      }
-    }
-  };
 
   const navigateToDetails = (phone_number) => {
     router.push(`/vendors/details?phone_number=${phone_number}`);
@@ -177,7 +167,7 @@ function VendorsListPage() {
                       {vendor.phone_number}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {vendor.shop_name || 'N/A'}
+                      {vendor.vendor_info.shop_name || 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
@@ -198,7 +188,7 @@ function VendorsListPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(vendor.created_at).toLocaleDateString()}
+                      {new Date(vendor.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex space-x-2">
@@ -232,13 +222,7 @@ function VendorsListPage() {
                             </>
                           )}
                         </button>
-                        <button
-                          onClick={() => deleteVendor(vendor.phone_number)}
-                          className="text-red-600 hover:text-red-900"
-                        >
-                          <FaTrash className="inline mr-1" />
-                          Delete
-                        </button>
+                        
                       </div>
                     </td>
                   </tr>
