@@ -7,7 +7,7 @@ import api from '../../lib/axios';
 
 import * as AiIcons from 'react-icons/ai';
 import * as MdIcons from 'react-icons/md';
-import { FaClipboardCheck, FaStore, FaShoppingCart, FaComments, FaChartLine, FaCog, FaUsers, FaUserTie } from 'react-icons/fa';
+import { FaClipboardCheck, FaStore, FaShoppingCart, FaComments, FaChartLine, FaCog, FaUsers, FaUserTie,FaWallet  } from 'react-icons/fa';
 
 export default function SideNav() {
   const [openCustomer, setOpenCustomer] = useState(false);
@@ -352,6 +352,17 @@ export default function SideNav() {
         >
           <FaCog size={20} />
           <span>Settings</span>
+        </Link>
+      </div>
+
+        {/* Wallet */}
+      <div className="mt-6 pt-6 border-t border-green-600">
+        <Link 
+          href="/adminWallet" 
+          className={`flex items-center gap-2 px-2 py-2 rounded transition-colors ${getActiveClass('/settings')}`}
+        >
+          <FaWallet size={20} />
+          <span>Wallet Details</span>
         </Link>
       </div>
 
