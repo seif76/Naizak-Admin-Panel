@@ -1,7 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import axios from 'axios';
 import api from '../../../lib/axios';
 import { 
   ArrowLeft, 
@@ -11,18 +10,22 @@ import {
   Star, 
   Calendar,
   Truck,
-  MapPin,
   DollarSign,
   Activity,
-  Edit,
   Trash2,
   Award,
   Clock,
   CheckCircle,
   XCircle,
   AlertCircle,
-  Package
+  Package,
+  Wallet,
+  Snowflake,
+  ArrowDownCircle,
+  ArrowUpCircle,
 } from 'lucide-react';
+
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
 export default function DeliverymanDetailsPage() {
   const [deliveryman, setDeliveryman] = useState(null);
@@ -32,24 +35,74 @@ export default function DeliverymanDetailsPage() {
   const router = useRouter();
   const deliverymanId = searchParams.get('id');
 
+  // ─── Wallet state ───
+  const [walletData, setWalletData] = useState(null);
+  const [transactions, setTransactions] = useState([]);
+  const [txPage, setTxPage] = useState(1);
+  const [txTotalPages, setTxTotalPages] = useState(1);
+  const [txTotal, setTxTotal] = useState(0);
+  const [walletLoading, setWalletLoading] = useState(false);
+  const [freezing, setFreezing] = useState(false);
+
+  // ─────────────────────────────────────────────
+  //  Fetch functions
+  // ─────────────────────────────────────────────
+
   const fetchDeliverymanDetails = async () => {
     try {
       setLoading(true);
       const response = await api.get(`/api/admin/deliverymen/details/${deliverymanId}`);
-      setDeliveryman(response.data); 
+      setDeliveryman(response.data);
     } catch (error) {
-      console.error('Error fetching deliveryman details:', error)
+      console.error('Error fetching deliveryman details:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // ─── Fetch wallet info and transactions ───
+  const fetchWalletData = async (page = 1) => {
+    try {
+      setWalletLoading(true);
+      const [walletRes, txRes] = await Promise.all([
+        api.get(`/api/wallet/user/${deliverymanId}`),
+        api.get(`/api/wallet/user/${deliverymanId}/transactions?page=${page}&limit=10`),
+      ]);
+
+      setWalletData(walletRes.data?.data?.wallet || walletRes.data?.wallet || null);
+      const txData = txRes.data?.data || txRes.data || {};
+      setTransactions(txData.transactions || []);
+      setTxTotalPages(txData.totalPages || 1);
+      setTxTotal(txData.totalTransactions || 0);
+      setTxPage(page);
+    } catch (error) {
+      console.error('Error fetching wallet data:', error);
+    } finally {
+      setWalletLoading(false);
+    }
+  };
+
+  // ─── Freeze / unfreeze wallet ───
+  const handleFreezeToggle = async () => {
+    if (!walletData) return;
+    try {
+      setFreezing(true);
+      const action = walletData.is_frozen ? 'unfreeze' : 'freeze';
+      await api.post(`${BACKEND_URL}/api/admin/wallet/wallets/${deliverymanId}/${action}`);
+      await fetchWalletData(txPage);
+    } catch (error) {
+      alert(error.response?.data?.error || 'Failed to update wallet status');
+    } finally {
+      setFreezing(false);
     }
   };
 
   const updateDeliverymanStatus = async (newStatus) => {
     try {
       await api.put(`/api/admin/deliverymen/${deliverymanId}/status`, {
-        status: newStatus
+        status: newStatus,
       });
-      fetchDeliverymanDetails(); // Refresh data
+      fetchDeliverymanDetails();
     } catch (error) {
       console.error('Error updating deliveryman status:', error);
     }
@@ -67,10 +120,73 @@ export default function DeliverymanDetailsPage() {
   };
 
   useEffect(() => {
-    if (deliverymanId) {
-      fetchDeliverymanDetails();
-    }
+    if (deliverymanId) fetchDeliverymanDetails();
   }, [deliverymanId]);
+
+  // ─── Load wallet when tab is opened ───
+  useEffect(() => {
+    if (activeTab === 'wallet' && deliverymanId) fetchWalletData();
+  }, [activeTab, deliverymanId]);
+
+  // ─────────────────────────────────────────────
+  //  Helpers
+  // ─────────────────────────────────────────────
+
+  const categoryColors = {
+    payment: 'bg-red-100 text-red-700',
+    earning: 'bg-green-100 text-green-700',
+    refund: 'bg-blue-100 text-blue-700',
+    topup: 'bg-purple-100 text-purple-700',
+    adjustment: 'bg-yellow-100 text-yellow-700',
+    withdrawal: 'bg-orange-100 text-orange-700',
+  };
+
+  const formatAmount = (amount) => `$${parseFloat(amount || 0).toFixed(2)}`;
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'Active': return 'bg-green-100 text-green-800';
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'Deactivated': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'Active': return <CheckCircle className="w-4 h-4" />;
+      case 'pending': return <Clock className="w-4 h-4" />;
+      case 'Deactivated': return <XCircle className="w-4 h-4" />;
+      default: return <AlertCircle className="w-4 h-4" />;
+    }
+  };
+
+  const getDeliveryStatusColor = (status) => {
+    switch (status) {
+      case 'completed':
+      case 'delivered': return 'bg-green-100 text-green-800';
+      case 'active':
+      case 'in_progress':
+      case 'picked_up': return 'bg-blue-100 text-blue-800';
+      case 'cancelled': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  // ─────────────────────────────────────────────
+  //  Loading / not found states
+  // ─────────────────────────────────────────────
 
   if (loading) {
     return (
@@ -97,62 +213,11 @@ export default function DeliverymanDetailsPage() {
     );
   }
 
-  // Assuming your DB field is either 'deliveryman_status' or just 'status' 
-  // Adjust this variable if your backend uses a different exact field name!
   const currentStatus = deliveryman.deliveryman_status || deliveryman.status;
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'Active':
-        return 'bg-green-100 text-green-800';
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'Deactivated':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'Active':
-        return <CheckCircle className="w-4 h-4" />;
-      case 'pending':
-        return <Clock className="w-4 h-4" />;
-      case 'Deactivated':
-        return <XCircle className="w-4 h-4" />;
-      default:
-        return <AlertCircle className="w-4 h-4" />;
-    }
-  };
-
-  const getDeliveryStatusColor = (status) => {
-    switch (status) {
-      case 'completed':
-      case 'delivered':
-        return 'bg-green-100 text-green-800';
-      case 'active':
-      case 'in_progress':
-      case 'picked_up':
-        return 'bg-blue-100 text-blue-800';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+  // ─────────────────────────────────────────────
+  //  Render
+  // ─────────────────────────────────────────────
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -176,8 +241,8 @@ export default function DeliverymanDetailsPage() {
               <button
                 onClick={() => updateDeliverymanStatus(currentStatus === 'Active' ? 'Deactivated' : 'Active')}
                 className={`px-4 py-2 rounded-lg border transition-colors ${
-                  currentStatus === 'Active' 
-                    ? 'border-red-300 text-red-700 hover:bg-red-50' 
+                  currentStatus === 'Active'
+                    ? 'border-red-300 text-red-700 hover:bg-red-50'
                     : 'border-green-300 text-green-700 hover:bg-green-50'
                 }`}
               >
@@ -195,16 +260,16 @@ export default function DeliverymanDetailsPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Deliveryman Overview */}
+        {/* Deliveryman Overview Card */}
         <div className="bg-white rounded-lg shadow-sm border mb-8">
           <div className="p-6">
             <div className="flex items-start justify-between mb-6">
               <div className="flex items-center gap-4">
                 <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center overflow-hidden">
                   {deliveryman.profile_photo ? (
-                    <img 
-                      src={deliveryman.profile_photo} 
-                      alt="Deliveryman Profile" 
+                    <img
+                      src={deliveryman.profile_photo}
+                      alt="Deliveryman Profile"
                       className="w-full h-full object-cover"
                     />
                   ) : (
@@ -236,7 +301,6 @@ export default function DeliverymanDetailsPage() {
                   <p className="font-medium">{deliveryman.phone_number}</p>
                 </div>
               </div>
-              
               <div className="flex items-center gap-3">
                 <Mail className="w-5 h-5 text-gray-400" />
                 <div>
@@ -244,7 +308,6 @@ export default function DeliverymanDetailsPage() {
                   <p className="font-medium">{deliveryman.email}</p>
                 </div>
               </div>
-              
               <div className="flex items-center gap-3">
                 <User className="w-5 h-5 text-gray-400" />
                 <div>
@@ -252,7 +315,6 @@ export default function DeliverymanDetailsPage() {
                   <p className="font-medium capitalize">{deliveryman.gender || 'N/A'}</p>
                 </div>
               </div>
-              
               <div className="flex items-center gap-3">
                 <Calendar className="w-5 h-5 text-gray-400" />
                 <div>
@@ -268,43 +330,32 @@ export default function DeliverymanDetailsPage() {
         <div className="bg-white rounded-lg shadow-sm border">
           <div className="border-b border-gray-200">
             <nav className="flex space-x-8 px-6">
-              <button
-                onClick={() => setActiveTab('overview')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'overview'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                Overview
-              </button>
-              <button
-                onClick={() => setActiveTab('vehicle')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'vehicle'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                Vehicle
-              </button>
-              <button
-                onClick={() => setActiveTab('deliveries')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'deliveries'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                Deliveries ({deliveryman.recentDeliveries?.length || 0})
-              </button>
+              {[
+                { key: 'overview', label: 'Overview' },
+                { key: 'vehicle', label: 'Vehicle' },
+                { key: 'deliveries', label: `Deliveries (${deliveryman.recentOrders?.length || 0})` },
+                { key: 'wallet', label: 'Wallet' },
+              ].map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === tab.key
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
             </nav>
           </div>
 
           <div className="p-6">
+
+            {/* ── Overview Tab ── */}
             {activeTab === 'overview' && (
               <div className="space-y-6">
-                {/* Delivery Statistics */}
                 <div>
                   <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                     <Package className="w-5 h-5" />
@@ -316,52 +367,49 @@ export default function DeliverymanDetailsPage() {
                         <Award className="w-5 h-5 text-blue-600" />
                         <span className="text-sm text-gray-600">Total Deliveries</span>
                       </div>
-                      <p className="text-2xl font-bold text-blue-600 mt-1">{deliveryman.deliveryStats?.total || 0}</p>
+                      <p className="text-2xl font-bold text-blue-600 mt-1">{deliveryman.orderStats?.total || 0}</p>
                     </div>
                     <div className="bg-green-50 p-4 rounded-lg">
                       <div className="flex items-center gap-2">
                         <CheckCircle className="w-5 h-5 text-green-600" />
                         <span className="text-sm text-gray-600">Completed</span>
                       </div>
-                      <p className="text-2xl font-bold text-green-600 mt-1">{deliveryman.deliveryStats?.completed || 0}</p>
+                      <p className="text-2xl font-bold text-green-600 mt-1">{deliveryman.orderStats?.completed || 0}</p>
                     </div>
                     <div className="bg-yellow-50 p-4 rounded-lg">
                       <div className="flex items-center gap-2">
                         <Clock className="w-5 h-5 text-yellow-600" />
                         <span className="text-sm text-gray-600">Active</span>
                       </div>
-                      <p className="text-2xl font-bold text-yellow-600 mt-1">{deliveryman.deliveryStats?.active || 0}</p>
+                      <p className="text-2xl font-bold text-yellow-600 mt-1">{deliveryman.orderStats?.active || 0}</p>
                     </div>
                   </div>
                 </div>
 
-                {/* Account Information */}
                 <div>
                   <h3 className="text-lg font-semibold mb-4">Account Information</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <div className="space-y-3">
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Status</span>
-                          <span className={`px-2 py-1 rounded-full text-sm ${getStatusColor(currentStatus)}`}>
-                            {currentStatus}
-                          </span>
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Status</span>
+                        <span className={`px-2 py-1 rounded-full text-sm ${getStatusColor(currentStatus)}`}>
+                          {currentStatus}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Rating</span>
+                        <div className="flex items-center gap-1">
+                          <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                          <span>{deliveryman.rating || 0}</span>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Rating</span>
-                          <div className="flex items-center gap-1">
-                            <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                            <span>{deliveryman.rating || 0}</span>
-                          </div>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Member Since</span>
-                          <span className="font-medium">{formatDate(deliveryman.createdAt)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Last Updated</span>
-                          <span className="font-medium">{formatDate(deliveryman.updatedAt)}</span>
-                        </div>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Member Since</span>
+                        <span className="font-medium">{formatDate(deliveryman.createdAt)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Last Updated</span>
+                        <span className="font-medium">{formatDate(deliveryman.updatedAt)}</span>
                       </div>
                     </div>
                   </div>
@@ -369,6 +417,7 @@ export default function DeliverymanDetailsPage() {
               </div>
             )}
 
+            {/* ── Vehicle Tab ── */}
             {activeTab === 'vehicle' && (
               <div>
                 <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
@@ -407,16 +456,15 @@ export default function DeliverymanDetailsPage() {
                           </div>
                         </div>
                       </div>
-                      
                       <div>
                         <h4 className="font-medium text-gray-900 mb-4">Documents</h4>
                         <div className="space-y-3">
                           {deliveryman.vehicle.driver_license_photo && (
                             <div>
                               <p className="text-sm text-gray-600 mb-2">Driver License</p>
-                              <img 
-                                src={deliveryman.vehicle.driver_license_photo} 
-                                alt="Driver License" 
+                              <img
+                                src={deliveryman.vehicle.driver_license_photo}
+                                alt="Driver License"
                                 className="w-full max-w-xs rounded-lg border"
                               />
                             </div>
@@ -424,9 +472,9 @@ export default function DeliverymanDetailsPage() {
                           {deliveryman.vehicle.national_id_photo && (
                             <div>
                               <p className="text-sm text-gray-600 mb-2">National ID</p>
-                              <img 
-                                src={deliveryman.vehicle.national_id_photo} 
-                                alt="National ID" 
+                              <img
+                                src={deliveryman.vehicle.national_id_photo}
+                                alt="National ID"
                                 className="w-full max-w-xs rounded-lg border"
                               />
                             </div>
@@ -444,12 +492,13 @@ export default function DeliverymanDetailsPage() {
               </div>
             )}
 
+            {/* ── Deliveries Tab ── */}
             {activeTab === 'deliveries' && (
               <div>
                 <h3 className="text-lg font-semibold mb-4">Recent Deliveries</h3>
-                {deliveryman.recentDeliveries && deliveryman.recentDeliveries.length > 0 ? (
+                {deliveryman.recentOrders && deliveryman.recentOrders.length > 0 ? (
                   <div className="space-y-4">
-                    {deliveryman.recentDeliveries.map((delivery) => (
+                    {deliveryman.recentOrders.map((delivery) => (
                       <div key={delivery.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-3">
@@ -470,16 +519,6 @@ export default function DeliverymanDetailsPage() {
                             </span>
                           </div>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                          <div>
-                            <span className="text-gray-600">Pickup:</span>
-                            <p className="font-medium">{delivery.pickup_location}</p>
-                          </div>
-                          <div>
-                            <span className="text-gray-600">Dropoff:</span>
-                            <p className="font-medium">{delivery.dropoff_location}</p>
-                          </div>
-                        </div>
                       </div>
                     ))}
                   </div>
@@ -491,6 +530,180 @@ export default function DeliverymanDetailsPage() {
                 )}
               </div>
             )}
+
+            {/* ── Wallet Tab ── */}
+            {activeTab === 'wallet' && (
+              <div>
+                {walletLoading && !walletData ? (
+                  <div className="flex justify-center py-12">
+                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+                  </div>
+                ) : !walletData ? (
+                  <div className="text-center py-8">
+                    <Wallet className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                    <p className="text-gray-500">No wallet found for this deliveryman</p>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+
+                    {/* Wallet summary cards */}
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      <div className="bg-white border rounded-lg p-4 shadow-sm">
+                        <p className="text-sm text-gray-500">Current Balance</p>
+                        <p className="text-2xl font-bold text-gray-900 mt-1">
+                          {formatAmount(walletData.balance)}
+                        </p>
+                      </div>
+                      <div className="bg-white border rounded-lg p-4 shadow-sm">
+                        <p className="text-sm text-gray-500">Outstanding Debt</p>
+                        <p className={`text-2xl font-bold mt-1 ${parseFloat(walletData.debt) > 0 ? 'text-red-600' : 'text-gray-400'}`}>
+                          {formatAmount(walletData.debt)}
+                        </p>
+                      </div>
+                      <div className="bg-white border rounded-lg p-4 shadow-sm">
+                        <p className="text-sm text-gray-500">Total Transactions</p>
+                        <p className="text-2xl font-bold text-gray-900 mt-1">{txTotal}</p>
+                      </div>
+                      <div className="bg-white border rounded-lg p-4 shadow-sm">
+                        <p className="text-sm text-gray-500">Wallet Status</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          {walletData.is_frozen ? (
+                            <>
+                              <Snowflake className="w-5 h-5 text-blue-500" />
+                              <span className="text-lg font-bold text-blue-600">Frozen</span>
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle className="w-5 h-5 text-green-500" />
+                              <span className="text-lg font-bold text-green-600">Active</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Freeze / Unfreeze button */}
+                    <div className="flex items-center gap-4">
+                      <button
+                        onClick={handleFreezeToggle}
+                        disabled={freezing}
+                        className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium transition-colors disabled:opacity-50 ${
+                          walletData.is_frozen
+                            ? 'bg-green-600 text-white hover:bg-green-700'
+                            : 'bg-red-600 text-white hover:bg-red-700'
+                        }`}
+                      >
+                        {walletData.is_frozen ? (
+                          <>
+                            <CheckCircle className="w-4 h-4" />
+                            {freezing ? 'Unfreezing...' : 'Unfreeze Wallet'}
+                          </>
+                        ) : (
+                          <>
+                            <Snowflake className="w-4 h-4" />
+                            {freezing ? 'Freezing...' : 'Freeze Wallet'}
+                          </>
+                        )}
+                      </button>
+                      {walletData.is_frozen && (
+                        <p className="text-sm text-blue-600">
+                          ❄️ This wallet is currently frozen — payments and withdrawals are blocked.
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Transactions table */}
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4">
+                        Transaction History
+                        {walletLoading && (
+                          <span className="ml-2 inline-block w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin align-middle" />
+                        )}
+                      </h3>
+
+                      {transactions.length === 0 ? (
+                        <div className="text-center py-8 border rounded-lg">
+                          <DollarSign className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                          <p className="text-gray-500">No transactions yet</p>
+                        </div>
+                      ) : (
+                        <div className="border rounded-lg overflow-hidden">
+                          <table className="w-full text-sm">
+                            <thead className="bg-gray-50 text-gray-600 uppercase text-xs">
+                              <tr>
+                                <th className="px-4 py-3 text-left">Type</th>
+                                <th className="px-4 py-3 text-left">Direction</th>
+                                <th className="px-4 py-3 text-right">Amount</th>
+                                <th className="px-4 py-3 text-right">Balance After</th>
+                                <th className="px-4 py-3 text-left">Description</th>
+                                <th className="px-4 py-3 text-left">Date</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                              {transactions.map((tx) => (
+                                <tr key={tx.id} className="hover:bg-gray-50">
+                                  <td className="px-4 py-3">
+                                    <span className={`px-2 py-1 rounded text-xs font-medium ${categoryColors[tx.category] || 'bg-gray-100 text-gray-600'}`}>
+                                      {tx.category}
+                                    </span>
+                                  </td>
+                                  <td className="px-4 py-3">
+                                    <span className={`flex items-center gap-1 text-xs font-medium ${tx.direction === 'incoming' ? 'text-green-600' : 'text-red-600'}`}>
+                                      {tx.direction === 'incoming'
+                                        ? <ArrowDownCircle className="w-4 h-4" />
+                                        : <ArrowUpCircle className="w-4 h-4" />}
+                                      {tx.direction}
+                                    </span>
+                                  </td>
+                                  <td className={`px-4 py-3 text-right font-semibold ${tx.direction === 'incoming' ? 'text-green-600' : 'text-red-600'}`}>
+                                    {tx.direction === 'incoming' ? '+' : '-'}{formatAmount(tx.amount)}
+                                  </td>
+                                  <td className="px-4 py-3 text-right text-gray-600">
+                                    {formatAmount(tx.balance_after)}
+                                  </td>
+                                  <td className="px-4 py-3 text-gray-600 max-w-xs truncate">
+                                    {tx.description || '—'}
+                                  </td>
+                                  <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">
+                                    {formatDate(tx.createdAt)}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+
+                          {/* Pagination */}
+                          {txTotalPages > 1 && (
+                            <div className="flex items-center justify-between px-4 py-3 border-t bg-gray-50">
+                              <p className="text-sm text-gray-600">
+                                Page {txPage} of {txTotalPages}
+                              </p>
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => fetchWalletData(txPage - 1)}
+                                  disabled={txPage === 1}
+                                  className="px-3 py-1 rounded bg-white border text-gray-600 hover:bg-gray-100 disabled:opacity-40 text-sm"
+                                >
+                                  Previous
+                                </button>
+                                <button
+                                  onClick={() => fetchWalletData(txPage + 1)}
+                                  disabled={txPage === txTotalPages}
+                                  className="px-3 py-1 rounded bg-white border text-gray-600 hover:bg-gray-100 disabled:opacity-40 text-sm"
+                                >
+                                  Next
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
           </div>
         </div>
       </div>

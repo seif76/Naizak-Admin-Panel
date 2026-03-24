@@ -1,7 +1,6 @@
-
 'use client';
 import { useEffect, useState } from 'react';
-import { FaUserTie, FaEye, FaEdit, FaTrash, FaCheck, FaTimes, FaSpinner } from 'react-icons/fa';
+import { FaUserTie, FaEye, FaCheck, FaTimes, FaSpinner, FaSearch } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
 import api from '../../../lib/axios';
 import { DeliverymenRoute } from '../../../components/auth/ProtectedRoute';
@@ -13,6 +12,8 @@ function DeliverymenListPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState('');
+  // ─── Added phone search state ───
+  const [phoneSearch, setPhoneSearch] = useState('');
   const router = useRouter();
 
   const fetchStats = async () => {
@@ -28,7 +29,13 @@ function DeliverymenListPage() {
     setLoading(true);
     try {
       const res = await api.get('/api/admin/deliverymen', {
-        params: { page, limit: 10, status: statusFilter || undefined },
+        params: {
+          page,
+          limit: 10,
+          status: statusFilter || undefined,
+          // ─── Pass phone search to backend ───
+          phone: phoneSearch || undefined,
+        },
       });
       setDeliverymen(res.data.deliverymen || []);
       setTotalPages(res.data.totalPages || 1);
@@ -38,8 +45,6 @@ function DeliverymenListPage() {
     setLoading(false);
   };
 
-
-
   const navigateToDetails = (id) => {
     router.push(`/deliverymen/details?id=${id}`);
   };
@@ -48,20 +53,21 @@ function DeliverymenListPage() {
     fetchStats();
   }, []);
 
+  // ─── Added phoneSearch to dependencies so search triggers on change ───
   useEffect(() => {
     fetchdeliverymen();
-  }, [page, statusFilter]);
+  }, [page, statusFilter, phoneSearch]);
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">deliverymen Management</h1>
+      <h1 className="text-2xl font-bold mb-4">Deliverymen Management</h1>
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-white p-4 rounded-lg shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Total deliverymen</p>
+              <p className="text-sm text-gray-600">Total Deliverymen</p>
               <p className="text-2xl font-bold">{stats.total || 0}</p>
             </div>
             <FaUserTie className="text-2xl text-blue-500" />
@@ -70,7 +76,7 @@ function DeliverymenListPage() {
         <div className="bg-white p-4 rounded-lg shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Active deliverymen</p>
+              <p className="text-sm text-gray-600">Active Deliverymen</p>
               <p className="text-2xl font-bold text-green-600">{stats.active || 0}</p>
             </div>
             <FaCheck className="text-2xl text-green-500" />
@@ -98,28 +104,58 @@ function DeliverymenListPage() {
 
       {/* Filters */}
       <div className="bg-white p-4 rounded-lg shadow mb-6">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 flex-wrap">
           <span className="text-sm font-medium">Filter by Status:</span>
           <select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
+            onChange={(e) => {
+              setStatusFilter(e.target.value);
+              setPage(1);
+            }}
             className="border rounded px-3 py-1 text-sm"
           >
-            <option value="">All deliverymen</option>
+            <option value="">All Deliverymen</option>
             <option value="Active">Active</option>
             <option value="pending">Pending</option>
             <option value="Deactivated">Deactivated</option>
           </select>
+
+          {/* ─── Added phone number search input ─── */}
+          <span className="text-sm font-medium">Search by Phone:</span>
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs" />
+              <input
+                type="text"
+                value={phoneSearch}
+                onChange={(e) => {
+                  setPhoneSearch(e.target.value);
+                  setPage(1);
+                }}
+                placeholder="Enter phone number..."
+                className="border rounded pl-8 pr-3 py-1 text-sm w-48"
+              />
+            </div>
+            {phoneSearch && (
+              <button
+                onClick={() => { setPhoneSearch(''); setPage(1); }}
+                className="text-sm text-red-500 hover:text-red-700 flex items-center gap-1"
+              >
+                <FaTimes size={12} />
+                Clear
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* deliverymen Table */}
+      {/* Deliverymen Table */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left min-w-[900px]">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">deliveryman</th>
+                <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Deliveryman</th>
                 <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
                 <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
                 <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
@@ -130,13 +166,13 @@ function DeliverymenListPage() {
             <tbody className="bg-white divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
+                  <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
                     Loading deliverymen...
                   </td>
                 </tr>
               ) : deliverymen.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
+                  <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
                     No deliverymen found
                   </td>
                 </tr>
@@ -157,7 +193,7 @@ function DeliverymenListPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        deliveryman.deliveryman_status === 'Active' 
+                        deliveryman.deliveryman_status === 'Active'
                           ? 'bg-green-100 text-green-800'
                           : deliveryman.deliveryman_status === 'pending'
                           ? 'bg-yellow-100 text-yellow-800'
@@ -185,8 +221,6 @@ function DeliverymenListPage() {
                           <FaEye className="inline mr-1" />
                           View
                         </button>
-                        
-                      
                       </div>
                     </td>
                   </tr>
@@ -230,9 +264,3 @@ export default function ProtecteddeliverymenListPage() {
     </DeliverymenRoute>
   );
 }
-
-
-
-
-
-

@@ -746,7 +746,7 @@ export default function OrderDetailsPage() {
                 {order.items.map((item, index) => (
                   <div key={index} className="p-4 flex items-center gap-4 hover:bg-gray-50/50 transition-colors">
                     {item.product?.image ? (
-                      <img src={item.product.image} alt={item.product.name} className="w-14 h-14 rounded-lg object-cover border border-gray-100" onError={(e) => { e.target.src = '/placeholder-image.jpg'; }} />
+                      <img src={item.product.image} alt={item.product.name} className="w-14 h-14 rounded-lg object-cover border border-gray-100"/>
                     ) : (
                       <div className="w-14 h-14 rounded-lg bg-gray-100 flex items-center justify-center">
                         <FaBox className="text-gray-300" />
