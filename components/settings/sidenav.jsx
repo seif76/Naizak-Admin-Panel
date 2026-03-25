@@ -65,65 +65,19 @@ export default function SettingsSidenav() {
           </div>
         </button>
         
+        
         <button
-          onClick={() => handleItemClick('payment-settings')}
+          onClick={() => handleItemClick('general-settings')}
           className={`flex items-center justify-between w-full px-2 py-2 rounded transition-colors ${getActiveClass('/settings/payment-settings')}`}
         >
           <div className="flex items-center gap-2">
             <FaCreditCard size={20} />
-            <span>Payment Settings</span>
+            <span>Multivenor Settings</span>
           </div>
         </button>
+        
 
-        <button
-          onClick={() => handleItemClick('notification-settings')}
-          className={`flex items-center justify-between w-full px-2 py-2 rounded transition-colors ${getActiveClass('/settings/notification-settings')}`}
-        >
-          <div className="flex items-center gap-2">
-            <FaBell size={20} />
-            <span>Notifications</span>
-          </div>
-        </button>
-
-        <button
-          onClick={() => handleItemClick('system-settings')}
-          className={`flex items-center justify-between w-full px-2 py-2 rounded transition-colors ${getActiveClass('/settings/system-settings')}`}
-        >
-          <div className="flex items-center gap-2">
-            <FaServer size={20} />
-            <span>System Settings</span>
-          </div>
-        </button>
-
-        <button
-          onClick={() => handleItemClick('user-management')}
-          className={`flex items-center justify-between w-full px-2 py-2 rounded transition-colors ${getActiveClass('/settings/user-management')}`}
-        >
-          <div className="flex items-center gap-2">
-            <FaUsers size={20} />
-            <span>User Management</span>
-          </div>
-        </button>
-
-        <button
-          onClick={() => handleItemClick('security-settings')}
-          className={`flex items-center justify-between w-full px-2 py-2 rounded transition-colors ${getActiveClass('/settings/security-settings')}`}
-        >
-          <div className="flex items-center gap-2">
-            <FaShieldAlt size={20} />
-            <span>Security</span>
-          </div>
-        </button>
-
-        <button
-          onClick={() => handleItemClick('general-settings')}
-          className={`flex items-center justify-between w-full px-2 py-2 rounded transition-colors ${getActiveClass('/settings/general-settings')}`}
-        >
-          <div className="flex items-center gap-2">
-            <FaGlobe size={20} />
-            <span>General Settings</span>
-          </div>
-        </button>
+        
       </div>
     </div>
   );
