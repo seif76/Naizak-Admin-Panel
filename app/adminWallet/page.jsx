@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
+//import axios from 'axios';
 import api from '../../lib/axios';
 import {
   FaWallet,
@@ -119,6 +120,25 @@ export default function WalletDashboardPage() {
   const [codTotal, setCodTotal] = useState(0);
   const [codStatus, setCodStatus] = useState('');
 
+  // Wallets management
+  const [wallets, setWallets] = useState([]);
+  const [walletsPage, setWalletsPage] = useState(1);
+  const [walletsTotalPages, setWalletsTotalPages] = useState(1);
+  const [walletsTotal, setWalletsTotal] = useState(0);
+  const [walletsFrozenFilter, setWalletsFrozenFilter] = useState('');
+  const [freezingId, setFreezingId] = useState(null);
+
+  // Withdrawal requests
+  const [withdrawals, setWithdrawals] = useState([]);
+  const [withdrawalPage, setWithdrawalPage] = useState(1);
+  const [withdrawalTotalPages, setWithdrawalTotalPages] = useState(1);
+  const [withdrawalTotal, setWithdrawalTotal] = useState(0);
+  const [withdrawalStatus, setWithdrawalStatus] = useState('');
+  const [processingId, setProcessingId] = useState(null);
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectingId, setRejectingId] = useState(null);
+  const [rejectionReason, setRejectionReason] = useState('');
+
   // ─── Fetch functions ───
 
   const fetchAdminWallet = async () => {
@@ -171,6 +191,85 @@ export default function WalletDashboardPage() {
 
 
 
+  const fetchWallets = async (page = 1, isFrozen = '') => {
+    try {
+      const params = new URLSearchParams({ page, limit: 20 });
+      if (isFrozen !== '') params.append('is_frozen', isFrozen);
+      const res = await api.get(`${BACKEND_URL}/api/admin/wallet/wallets?${params}`);
+      const data = res.data.data;
+      setWallets(data.wallets);
+      setWalletsTotalPages(data.totalPages);
+      setWalletsTotal(data.totalWallets);
+      setWalletsPage(page);
+    } catch (error) {
+      console.error('Error fetching wallets:', error);
+    }
+  };
+
+  const handleFreezeToggle = async (userId, isFrozen) => {
+    try {
+      setFreezingId(userId);
+      const action = isFrozen ? 'unfreeze' : 'freeze';
+      await api.post(`${BACKEND_URL}/api/admin/wallet/wallets/${userId}/${action}`);
+      fetchWallets(walletsPage, walletsFrozenFilter);
+    } catch (error) {
+      alert(error.response?.data?.error || `Failed to ${isFrozen ? 'unfreeze' : 'freeze'} wallet`);
+    } finally {
+      setFreezingId(null);
+    }
+  };
+
+  const fetchWithdrawals = async (page = 1, status = '') => {
+    try {
+      const params = new URLSearchParams({ page, limit: 20 });
+      if (status) params.append('status', status);
+      const res = await api.get(`${BACKEND_URL}/api/admin/wallet/withdrawals?${params}`);
+      const data = res.data.data;
+      setWithdrawals(data.withdrawalRequests || []);
+      setWithdrawalTotalPages(data.totalPages || 1);
+      setWithdrawalTotal(data.totalRequests || 0);
+      setWithdrawalPage(page);
+    } catch (error) {
+      console.error('Error fetching withdrawals:', error);
+    }
+  };
+
+  const handleApprove = async (id) => {
+    if (!id) return;
+    if (!confirm('Approve this withdrawal? The amount will be deducted from the user wallet.')) return;
+    alert(id);
+    try {
+      setProcessingId(id);
+      await api.post(`${BACKEND_URL}/api/admin/wallet/withdrawals/${id}/approve`);
+      fetchWithdrawals(withdrawalPage, withdrawalStatus);
+    } catch (error) {
+      alert(error.response?.data?.error || 'Failed to approve withdrawal');
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleReject = async () => {
+    if (!rejectionReason.trim()) {
+      alert('Please enter a rejection reason');
+      return;
+    }
+    try {
+      setProcessingId(rejectingId);
+      await api.post(`${BACKEND_URL}/api/admin/wallet/withdrawals/${rejectingId}/reject`, {
+        rejection_reason: rejectionReason,
+      });
+      setShowRejectModal(false);
+      setRejectionReason('');
+      setRejectingId(null);
+      fetchWithdrawals(withdrawalPage, withdrawalStatus);
+    } catch (error) {
+      alert(error.response?.data?.error || 'Failed to reject withdrawal');
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
   // ─── Initial load ───
 
   useEffect(() => {
@@ -181,6 +280,8 @@ export default function WalletDashboardPage() {
         fetchTransactions(),
         fetchDebtSummary(),
         fetchCodDebts(),
+        fetchWallets(),
+        //fetchWithdrawals(),
       ]);
       setLoading(false);
     };
@@ -197,10 +298,18 @@ export default function WalletDashboardPage() {
     if (activeTab === 'cod') fetchCodDebts(1, codStatus);
   }, [activeTab]);
 
+  useEffect(() => {
+    if (activeTab === 'withdrawals') fetchWithdrawals(1, withdrawalStatus);
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab === 'wallets') fetchWallets(1, walletsFrozenFilter);
+  }, [activeTab]);
+
   // ─── Navigate to deliveryman detail page ───
 
   const handleViewDetails = (deliverymanId) => {
-    router.push(`/adminWallet/${deliverymanId}`);
+    router.push(`/wallet/${deliverymanId}`);
   };
 
   if (loading) {
@@ -261,6 +370,9 @@ export default function WalletDashboardPage() {
           { key: 'overview', label: 'Deliveryman Debts Overview' },
           { key: 'transactions', label: 'All Transactions' },
           { key: 'cod', label: 'COD Debt Records' },
+          { key: 'wallets', label: 'Wallet Management' },
+          { key: 'withdrawals', label: 'Withdrawal Requests' },
+
         ].map((tab) => (
           <button
             key={tab.key}
@@ -535,6 +647,277 @@ export default function WalletDashboardPage() {
               totalPages={codTotalPages}
               onPageChange={(p) => fetchCodDebts(p, codStatus)}
             />
+          </div>
+        </div>
+      )}
+      {/* ── Tab: Wallet Management ── */}
+      {activeTab === 'wallets' && (
+        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800">All Wallets</h3>
+              <p className="text-sm text-gray-500 mt-1">{walletsTotal} total wallets</p>
+            </div>
+            <select
+              value={walletsFrozenFilter}
+              onChange={(e) => {
+                setWalletsFrozenFilter(e.target.value);
+                fetchWallets(1, e.target.value);
+              }}
+              className="border border-gray-200 rounded px-3 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-primary"
+            >
+              <option value="">All Wallets</option>
+              <option value="false">Active</option>
+              <option value="true">Frozen</option>
+            </select>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 text-gray-600 uppercase text-xs">
+                <tr>
+                  <th className="px-4 py-3 text-left">User</th>
+                  <th className="px-4 py-3 text-left">Role</th>
+                  <th className="px-4 py-3 text-right">Balance</th>
+                  <th className="px-4 py-3 text-right">Debt</th>
+                  <th className="px-4 py-3 text-center">Status</th>
+                  <th className="px-4 py-3 text-center">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {wallets.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
+                      No wallets found
+                    </td>
+                  </tr>
+                ) : (
+                  wallets.map((w) => {
+                    const user = w.user;
+                    const role = user?.vendor_status !== 'none'
+                      ? 'Vendor'
+                      : user?.deliveryman_status !== 'none'
+                      ? 'Deliveryman'
+                      : 'Customer';
+
+                    return (
+                      <tr key={w.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-3">
+                          <p className="font-medium text-gray-900">{user?.name || '—'}</p>
+                          <p className="text-xs text-gray-500">{user?.email || '—'}</p>
+                          <p className="text-xs text-gray-400">{user?.phone_number || '—'}</p>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`px-2 py-1 rounded text-xs font-medium ${
+                            role === 'Vendor' ? 'bg-blue-100 text-blue-700' :
+                            role === 'Deliveryman' ? 'bg-orange-100 text-orange-700' :
+                            'bg-purple-100 text-purple-700'
+                          }`}>
+                            {role}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-right font-semibold text-gray-900">
+                          {formatAmount(w.balance)}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <span className={`font-semibold ${parseFloat(w.debt) > 0 ? 'text-red-600' : 'text-gray-400'}`}>
+                            {formatAmount(w.debt)}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className={`px-2 py-1 rounded text-xs font-medium ${
+                            w.is_frozen ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
+                          }`}>
+                            {w.is_frozen ? '❄️ Frozen' : '✅ Active'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <button
+                            onClick={() => handleFreezeToggle(user?.id, w.is_frozen)}
+                            disabled={freezingId === user?.id}
+                            className={`px-3 py-1.5 rounded text-xs font-medium transition-colors disabled:opacity-50 ${
+                              w.is_frozen
+                                ? 'bg-green-600 text-white hover:bg-green-700'
+                                : 'bg-red-600 text-white hover:bg-red-700'
+                            }`}
+                          >
+                            {freezingId === user?.id
+                              ? '...'
+                              : w.is_frozen
+                              ? 'Unfreeze'
+                              : 'Freeze'}
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="px-4 pb-4">
+            <Pagination
+              currentPage={walletsPage}
+              totalPages={walletsTotalPages}
+              onPageChange={(p) => fetchWallets(p, walletsFrozenFilter)}
+            />
+          </div>
+        </div>
+      )}
+      {/* ── Tab: Withdrawal Requests ── */}
+      {activeTab === 'withdrawals' && (
+        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800">Withdrawal Requests</h3>
+              <p className="text-sm text-gray-500 mt-1">{withdrawalTotal} total requests</p>
+            </div>
+            <select
+              value={withdrawalStatus}
+              onChange={(e) => {
+                setWithdrawalStatus(e.target.value);
+                fetchWithdrawals(1, e.target.value);
+              }}
+              className="border border-gray-200 rounded px-3 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-primary"
+            >
+              <option value="">All Statuses</option>
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 text-gray-600 uppercase text-xs">
+                <tr>
+                  <th className="px-4 py-3 text-left">User</th>
+                  <th className="px-4 py-3 text-right">Amount</th>
+                  <th className="px-4 py-3 text-left">Bank Account</th>
+                  <th className="px-4 py-3 text-left">Bank Name</th>
+                  <th className="px-4 py-3 text-left">Account Holder</th>
+                  <th className="px-4 py-3 text-left">IBAN</th>
+                  <th className="px-4 py-3 text-center">Status</th>
+                  <th className="px-4 py-3 text-left">Requested At</th>
+                  <th className="px-4 py-3 text-left">Processed At</th>
+                  <th className="px-4 py-3 text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {withdrawals.length === 0 ? (
+                  <tr>
+                    <td colSpan={10} className="px-4 py-8 text-center text-gray-400">
+                      No withdrawal requests found
+                    </td>
+                  </tr>
+                ) : (
+                  withdrawals.filter(w => w && w.id).map((w) => (
+                    <tr key={w.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3">
+                        <p className="font-medium text-gray-900">{w.wallet?.user?.name || '—'}</p>
+                        <p className="text-xs text-gray-500">{w.wallet?.user?.email || '—'}</p>
+                        <p className="text-xs text-gray-400">{w.wallet?.user?.phone_number || '—'}</p>
+                      </td>
+                      <td className="px-4 py-3 text-right font-semibold text-gray-900">
+                        {formatAmount(w.amount)}
+                      </td>
+                      <td className="px-4 py-3 text-gray-600">{w.bank_account || '—'}</td>
+                      <td className="px-4 py-3 text-gray-600">{w.bank_name || '—'}</td>
+                      <td className="px-4 py-3 text-gray-600">{w.account_holder_name || '—'}</td>
+                      <td className="px-4 py-3 text-gray-500 text-xs">{w.iban || '—'}</td>
+                      <td className="px-4 py-3 text-center">
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${
+                          w.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                          w.status === 'approved' ? 'bg-green-100 text-green-700' :
+                          w.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                          'bg-gray-100 text-gray-600'
+                        }`}>
+                          {w.status}
+                        </span>
+                        {w.status === 'rejected' && w.rejection_reason && (
+                          <p className="text-xs text-red-500 mt-1 max-w-xs truncate" title={w.rejection_reason}>
+                            {w.rejection_reason}
+                          </p>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">
+                        {formatDate(w.createdAt)}
+                      </td>
+                      <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">
+                        {w.processed_at ? formatDate(w.processed_at) : '—'}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        {w.status === 'pending' ? (
+                          <div className="flex items-center justify-center gap-2">
+                            <button
+                              onClick={() => handleApprove(w.id)}
+                              disabled={processingId === w.id}
+                              className="px-3 py-1.5 bg-green-600 text-white text-xs rounded hover:bg-green-700 disabled:opacity-50 transition-colors"
+                            >
+                              {processingId === w.id ? '...' : 'Approve'}
+                            </button>
+                            <button
+                              onClick={() => { setRejectingId(w.id); setShowRejectModal(true); }}
+                              disabled={processingId === w.id}
+                              className="px-3 py-1.5 bg-red-600 text-white text-xs rounded hover:bg-red-700 disabled:opacity-50 transition-colors"
+                            >
+                              Reject
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-gray-400">
+                            {w.status === 'approved' ? '✅ Approved' : '❌ Rejected'}
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="px-4 pb-4">
+            <Pagination
+              currentPage={withdrawalPage}
+              totalPages={withdrawalTotalPages}
+              onPageChange={(p) => fetchWithdrawals(p, withdrawalStatus)}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Reject Modal */}
+      {showRejectModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md mx-4 shadow-xl">
+            <h3 className="text-xl font-bold text-gray-900 mb-4">Reject Withdrawal</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Please provide a reason for rejecting this withdrawal request.
+            </p>
+            <textarea
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+              placeholder="Enter rejection reason..."
+              rows={3}
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500 mb-4 resize-none"
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setShowRejectModal(false); setRejectionReason(''); setRejectingId(null); }}
+                className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleReject}
+                disabled={processingId === rejectingId}
+                className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 font-medium"
+              >
+                {processingId === rejectingId ? 'Rejecting...' : 'Confirm Reject'}
+              </button>
+            </div>
           </div>
         </div>
       )}
