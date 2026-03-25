@@ -13,6 +13,8 @@ import {
   FaCalendarAlt,
   FaFilter
 } from 'react-icons/fa';
+import api from '../../lib/axios';
+
 
 export default function AnalyticsPage() {
   const [analytics, setAnalytics] = useState({
@@ -45,7 +47,7 @@ export default function AnalyticsPage() {
     try {
       setLoading(true);
       // This would need to be implemented in the backend
-      const res = await axios.get(`${BACKEND_URL}/api/admin/dashboard/overview?range=${timeRange}`);
+      const res =  api.get(`${BACKEND_URL}/api/admin/dashboard/overview?range=${timeRange}`);
       setAnalytics(res.data);
     } catch (error) {
       console.error('Error fetching analytics:', error);
