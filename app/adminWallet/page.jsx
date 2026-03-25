@@ -309,7 +309,7 @@ export default function WalletDashboardPage() {
   // ─── Navigate to deliveryman detail page ───
 
   const handleViewDetails = (deliverymanId) => {
-    router.push(`/wallet/${deliverymanId}`);
+    router.push(`/adminWallet/${deliverymanId}`);
   };
 
   if (loading) {

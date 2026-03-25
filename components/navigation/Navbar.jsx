@@ -42,7 +42,7 @@ export default function TopNavbar() {
         <button onClick={() => router.push("/")} className="hover:text-primary flex items-center gap-2 transition-all duration-150">
           <FaFileAlt /> Reports
         </button>
-        <button onClick={() => router.push("/settings")} className="hover:text-primary flex items-center gap-2 transition-all duration-150">
+        <button onClick={() => router.push("/settings/delivery-zone")} className="hover:text-primary flex items-center gap-2 transition-all duration-150">
           <FaCog /> Settings
         </button>
       </div>

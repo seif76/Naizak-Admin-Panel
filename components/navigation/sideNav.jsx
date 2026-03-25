@@ -347,7 +347,7 @@ export default function SideNav() {
       {/* Settings */}
       <div className="mt-6 pt-6 border-t border-green-600">
         <Link 
-          href="/settings" 
+          href="/settings/delivery-zone" 
           className={`flex items-center gap-2 px-2 py-2 rounded transition-colors ${getActiveClass('/settings')}`}
         >
           <FaCog size={20} />
